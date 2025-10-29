@@ -1,4 +1,3 @@
-<script type="module">
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-auth.js";
@@ -24,4 +23,3 @@ const storage = getStorage(app);
 
 // Make available globally
 window.__firebase = { app, auth, db, storage };
-</script>
