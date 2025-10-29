@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Login — Pehchaan Setu</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"></head>
+<body class="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+  <div class="max-w-md w-full bg-white rounded p-6 shadow">
+    <h1 class="text-xl font-bold mb-4">Login</h1>
+    <form id="loginForm" class="space-y-3">
+      <input name="email" type="email" placeholder="Email" required class="w-full p-2 border rounded"/>
+      <input name="password" type="password" placeholder="Password" required class="w-full p-2 border rounded"/>
+      <div class="flex justify-between items-center">
+        <button class="bg-blue-600 text-white px-4 py-2 rounded">Sign in</button>
+        <a href="#" id="resetBtn" class="text-sm text-blue-600">Forgot?</a>
+      </div>
+    </form>
+    <p class="text-sm mt-3">New? <a href="auth-signup.html" class="text-blue-600">Create account</a></p>
+  </div>
+
+  <script type="module" src="firebase-config.js"></script>
+  <script type="module">
+    import { signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-auth.js";
+    const auth = window.__firebase.auth;
+
+    document.getElementById('loginForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const email = e.target.email.value;
+      const pass = e.target.password.value;
+      try{
+        const userCred = await signInWithEmailAndPassword(auth, email, pass);
+        // optional: enforce email verification
+        if (!userCred.user.emailVerified) {
+          alert('Please verify your email first (check your inbox).');
+          await auth.signOut();
+          return;
+        }
+        window.location.href = 'profile.html';
+      } catch(err){ alert(err.message); console.error(err); }
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', async (e)=>{
+      e.preventDefault();
+      const email = prompt('Enter your login email');
+      if(!email) return;
+      try{ await sendPasswordResetEmail(auth, email); alert('Reset email sent'); }catch(e){ alert(e.message); }
+    });
+  </script>
+</body>
+</html>
