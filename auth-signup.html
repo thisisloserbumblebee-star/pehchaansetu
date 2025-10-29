@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Create Account — Pehchaan Setu</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-6">
+  <div class="max-w-md w-full bg-white rounded-xl shadow-md p-8">
+    <h1 class="text-2xl font-bold mb-4">Create your Pehchaan</h1>
+
+    <form id="authSignupForm" class="space-y-3">
+      <input name="fullName" placeholder="Full name" required class="w-full p-2 border rounded" />
+      <input name="email" type="email" placeholder="Email" required class="w-full p-2 border rounded" />
+      <input name="password" type="password" placeholder="Password (6+ chars)" required class="w-full p-2 border rounded" />
+      <div class="flex justify-between items-center">
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Create account</button>
+        <button type="button" id="googleBtn" class="bg-white border px-3 py-2 rounded">Sign in with Google</button>
+      </div>
+    </form>
+
+    <p class="text-sm text-gray-500 mt-3">Already a member? <a href="auth-login.html" class="text-blue-600">Login</a></p>
+  </div>
+
+  <!-- Firebase config (we already added firebase-config.js earlier) -->
+  <script type="module" src="firebase-config.js"></script>
+
+  <script type="module">
+    import { createUserWithEmailAndPassword, sendEmailVerification, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-auth.js";
+    import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-firestore.js";
+
+    const auth = window.__firebase.auth;
+    const db = window.__firebase.db;
+
+    document.getElementById('authSignupForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const name = e.target.fullName.value.trim();
+      const email = e.target.email.value.trim();
+      const pass = e.target.password.value;
+      try{
+        const userCred = await createUserWithEmailAndPassword(auth, email, pass);
+        await sendEmailVerification(userCred.user);
+        await setDoc(doc(db, 'users', userCred.user.uid), {
+          fullName: name,
+          email,
+          city: '',
+          role: '',
+          skills: [],
+          bio: '',
+          createdAt: serverTimestamp(),
+          profilePublic: true,
+          status: 'new'
+        });
+        alert('Account created. Check your email to verify.');
+        window.location.href = 'profile.html';
+      } catch(err){
+        alert(err.message);
+        console.error(err);
+      }
+    });
+
+    document.getElementById('googleBtn').addEventListener('click', async ()=>{
+      const provider = new GoogleAuthProvider();
+      try{
+        const res = await signInWithPopup(auth, provider);
+        const u = res.user;
+        await setDoc(doc(db, 'users', u.uid), {
+          fullName: u.displayName || '',
+          email: u.email,
+          photoURL: u.photoURL || '',
+          createdAt: serverTimestamp(),
+          profilePublic: true,
+          status: 'active'
+        }, { merge: true });
+        window.location.href = 'profile.html';
+      } catch(e){ console.error(e); alert(e.message); }
+    });
+  </script>
+</body>
+</html>
