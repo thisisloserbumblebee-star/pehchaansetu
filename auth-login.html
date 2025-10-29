@@ -1,48 +1,168 @@
 <!doctype html>
 <html>
-<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Login — Pehchaan Setu</title>
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"></head>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login — Pehchaan Setu</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
 <body class="min-h-screen flex items-center justify-center bg-gray-50 p-6">
   <div class="max-w-md w-full bg-white rounded p-6 shadow">
-    <h1 class="text-xl font-bold mb-4">Login</h1>
+    <h1 class="text-2xl font-bold mb-4">Login</h1>
+
+    <div id="alert" class="mb-3 hidden p-3 rounded border text-sm"></div>
+
     <form id="loginForm" class="space-y-3">
-      <input name="email" type="email" placeholder="Email" required class="w-full p-2 border rounded"/>
-      <input name="password" type="password" placeholder="Password" required class="w-full p-2 border rounded"/>
+      <input id="email" name="email" type="email" placeholder="Email" required class="w-full p-2 border rounded" />
+      <input id="password" name="password" type="password" placeholder="Password" required class="w-full p-2 border rounded" />
       <div class="flex justify-between items-center">
-        <button class="bg-blue-600 text-white px-4 py-2 rounded">Sign in</button>
-        <a href="#" id="resetBtn" class="text-sm text-blue-600">Forgot?</a>
+        <button type="submit" id="signinBtn" class="bg-blue-600 text-white px-4 py-2 rounded">Sign in</button>
+        <button id="googleBtn" type="button" class="bg-white border px-3 py-2 rounded">Sign in with Google</button>
       </div>
     </form>
+
     <p class="text-sm mt-3">New? <a href="auth-signup.html" class="text-blue-600">Create account</a></p>
+
+    <hr class="my-4">
+
+    <div class="text-xs text-gray-500">
+      Tip: Open DevTools (Console) if anything fails. Paste the error here and I’ll decode it.
+    </div>
   </div>
 
+  <!-- ensure firebase-config.js is present in repo root -->
   <script type="module" src="firebase-config.js"></script>
+
   <script type="module">
-    import { signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-auth.js";
-    const auth = window.__firebase.auth;
+    import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendEmailVerification } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-auth.js";
+    import { doc, setDoc } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-firestore.js";
 
-    document.getElementById('loginForm').addEventListener('submit', async (e)=>{
-      e.preventDefault();
-      const email = e.target.email.value;
-      const pass = e.target.password.value;
-      try{
-        const userCred = await signInWithEmailAndPassword(auth, email, pass);
-        // optional: enforce email verification
-        if (!userCred.user.emailVerified) {
-          alert('Please verify your email first (check your inbox).');
-          await auth.signOut();
-          return;
-        }
-        window.location.href = 'profile.html';
-      } catch(err){ alert(err.message); console.error(err); }
-    });
+    const alertBox = document.getElementById('alert');
+    const signinBtn = document.getElementById('signinBtn');
+    const googleBtn = document.getElementById('googleBtn');
 
-    document.getElementById('resetBtn').addEventListener('click', async (e)=>{
-      e.preventDefault();
-      const email = prompt('Enter your login email');
-      if(!email) return;
-      try{ await sendPasswordResetEmail(auth, email); alert('Reset email sent'); }catch(e){ alert(e.message); }
-    });
+    function showAlert(text, type='error') {
+      alertBox.classList.remove('hidden');
+      alertBox.innerHTML = '';
+      alertBox.textContent = text;
+      alertBox.style.borderColor = type === 'error' ? '#f0ad4e' : '#b6f2c7';
+      alertBox.style.backgroundColor = type === 'error' ? '#fff7e6' : '#f0ffef';
+      alertBox.style.color = '#333';
+    }
+    function hideAlert() {
+      alertBox.classList.add('hidden');
+      alertBox.innerHTML = '';
+    }
+
+    // wait for firebase-config to set window.__firebase
+    function waitForFirebase(timeout = 5000) {
+      return new Promise((resolve, reject) => {
+        const start = Date.now();
+        (function check() {
+          if (window.__firebase && window.__firebase.auth) return resolve(window.__firebase);
+          if (Date.now() - start > timeout) return reject(new Error('Firebase not detected (timeout). Check firebase-config.js and that it is included before this script).'));
+          setTimeout(check, 100);
+        })();
+      });
+    }
+
+    (async function init() {
+      try {
+        const fb = await waitForFirebase();
+        const auth = fb.auth;
+        const db = fb.db;
+
+        // if already signed in, redirect
+        auth.onAuthStateChanged(user => {
+          console.log('onAuthStateChanged', user ? user.uid : null);
+          if (user) {
+            // if user logged in and verified -> go to profile
+            if (user.emailVerified || user.providerData.some(p=>p.providerId === 'google.com')) {
+              window.location.href = 'profile.html';
+            } else {
+              // user signed in (maybe just created) but not verified: stay on page and suggest verifying
+              showAlert('Account created but email is not verified. Check your inbox. You can also resend verification after logging in.', 'error');
+            }
+          }
+        });
+
+        // FORM SUBMIT
+        document.getElementById('loginForm').addEventListener('submit', async (e)=>{
+          e.preventDefault();
+          hideAlert();
+          signinBtn.disabled = true;
+          const email = document.getElementById('email').value.trim();
+          const password = document.getElementById('password').value;
+          try {
+            const userCred = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCred.user;
+            console.log('signed in:', user.uid, 'emailVerified=', user.emailVerified);
+            // redirect only if verified or Google
+            if (user.emailVerified || user.providerData.some(p=>p.providerId === 'google.com')) {
+              window.location.href = 'profile.html';
+            } else {
+              // show helpful UI: resend + check
+              showAlert('Email not verified. Click "Resend verification" to get another email.', 'error');
+              const resendBtn = document.createElement('button');
+              resendBtn.textContent = 'Resend verification';
+              resendBtn.className = 'ml-3 px-3 py-1 border rounded bg-white';
+              resendBtn.addEventListener('click', async ()=>{
+                try {
+                  await sendEmailVerification(user);
+                  showAlert('Verification email resent. Check your inbox (and spam).', 'success');
+                } catch(err) {
+                  console.error('resend error', err);
+                  showAlert('Could not resend verification: ' + (err.message || err), 'error');
+                }
+              });
+              alertBox.appendChild(resendBtn);
+            }
+          } catch(err) {
+            console.error('signIn error', err);
+            let msg = err.message || 'Login failed';
+            if(err.code === 'auth/user-not-found') msg = 'No account found for this email.';
+            if(err.code === 'auth/wrong-password') msg = 'Incorrect password.';
+            if(err.code === 'auth/invalid-email') msg = 'Invalid email address.';
+            if(err.code === 'auth/too-many-requests') msg = 'Too many failed attempts. Try again later.';
+            if(err.code === 'auth/network-request-failed') msg = 'Network error. Check your connection.';
+            showAlert(msg, 'error');
+          } finally {
+            signinBtn.disabled = false;
+          }
+        });
+
+        // GOOGLE login
+        googleBtn.addEventListener('click', async ()=>{
+          hideAlert();
+          try {
+            const provider = new GoogleAuthProvider();
+            const res = await signInWithPopup(auth, provider);
+            const u = res.user;
+            console.log('google sign in ok', u.uid);
+            // ensure user doc exists (merge)
+            try {
+              await setDoc(doc(db, 'users', u.uid), {
+                fullName: u.displayName || '',
+                email: u.email,
+                photoURL: u.photoURL || '',
+                createdAt: new Date(),
+                status: 'active'
+              }, { merge: true });
+            } catch(e) { console.warn('could not write user doc', e); }
+            // google accounts are considered verified -> redirect
+            window.location.href = 'profile.html';
+          } catch(err) {
+            console.error('google signIn error', err);
+            showAlert('Google sign-in error: ' + (err.message || err));
+          }
+        });
+
+        console.log('Login initialized. window.__firebase available.', fb);
+      } catch (err) {
+        console.error('Firebase init error', err);
+        showAlert('Firebase not initialized. Check firebase-config.js and that it is present in repo root and included before this script. Error: ' + err.message, 'error');
+      }
+    })();
   </script>
 </body>
 </html>
