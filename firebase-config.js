@@ -1,10 +1,6 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-firestore.js";
-import { getStorage } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-storage.js";
+// firebase-config.js (compat style)
+// This file should be loaded AFTER the compat CDN scripts in the HTML.
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyDfhdfkopi9k_y6s44rsCQRfKfXCGUsCYs",
   authDomain: "pehchaan-setu.firebaseapp.com",
@@ -15,11 +11,15 @@ const firebaseConfig = {
   measurementId: "G-SC0GNZHMY5"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
+// Initialize Firebase using compat API
+if (!window.firebase || !firebase.apps) {
+  firebase.initializeApp(firebaseConfig);
+}
 
-// Make available globally
-window.__firebase = { app, auth, db, storage };
+// Expose small helper for other scripts
+window.__firebase_compat = {
+  app: firebase.app(),
+  auth: firebase.auth(),
+  firestore: firebase.firestore(),
+  storage: firebase.storage()
+};
