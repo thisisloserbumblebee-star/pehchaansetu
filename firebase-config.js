@@ -4,7 +4,7 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-auth
 import { getFirestore } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-storage.js";
 
-// Your web app's Firebase configuration
+// Your web app's Firebase configuration (keep these values exactly)
 const firebaseConfig = {
   apiKey: "AIzaSyDfhdfkopi9k_y6s44rsCQRfKfXCGUsCYs",
   authDomain: "pehchaan-setu.firebaseapp.com",
@@ -21,5 +21,5 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-// Make available globally
+// Make available globally for other scripts
 window.__firebase = { app, auth, db, storage };
