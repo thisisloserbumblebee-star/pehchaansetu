@@ -1,0 +1,193 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Your Profile — Pehchaan Setu</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 min-h-screen p-6">
+  <div class="max-w-3xl mx-auto bg-white rounded p-6 shadow">
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-2xl font-bold">Your Profile</h1>
+      <div>
+        <button id="logoutBtn" class="text-sm text-red-600 mr-2">Logout</button>
+      </div>
+    </div>
+
+    <!-- EMAIL VERIFICATION NOTICE (shown when not verified) -->
+    <div id="verificationBox" class="bg-yellow-50 border border-yellow-200 p-4 rounded mb-4 hidden">
+      <p class="text-yellow-900 mb-2">Please verify your email to continue. A verification link has been sent to your email address.</p>
+      <div class="flex gap-3">
+        <button id="resendBtn" class="px-3 py-2 bg-yellow-400 rounded">Resend verification</button>
+        <button id="checkedBtn" class="px-3 py-2 bg-blue-600 text-white rounded">I verified — continue</button>
+        <button id="signoutVerifyBtn" class="px-3 py-2 bg-white border rounded">Sign out</button>
+      </div>
+      <p id="verifyMsg" class="text-sm text-gray-600 mt-2"></p>
+    </div>
+
+    <!-- PROFILE FORM (hidden until email verified) -->
+    <form id="profileForm" class="space-y-3 hidden">
+      <input id="fullName" name="fullName" placeholder="Full name" class="w-full p-2 border rounded" />
+      <input id="city" name="city" placeholder="City" class="w-full p-2 border rounded" />
+      <select id="role" name="role" class="w-full p-2 border rounded">
+        <option>Student</option><option>Software Engineer</option><option>Designer</option><option>Freelancer</option><option>Other</option>
+      </select>
+      <input id="skills" name="skills" placeholder="Skills (comma separated)" class="w-full p-2 border rounded" />
+      <textarea id="bio" name="bio" rows="3" placeholder="Short bio" class="w-full p-2 border rounded"></textarea>
+
+      <div>
+        <label class="block mb-2">Profile photo</label>
+        <input type="file" id="photo" accept="image/*" />
+      </div>
+
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Save profile</button>
+    </form>
+
+  </div>
+
+  <!-- firebase-config.js must already exist in repo root -->
+  <script type="module" src="firebase-config.js"></script>
+  <script type="module">
+    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-auth.js";
+    import { doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-firestore.js";
+    import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-storage.js";
+    import { sendEmailVerification } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-auth.js";
+
+    const auth = window.__firebase.auth;
+    const db = window.__firebase.db;
+    const storage = window.__firebase.storage;
+
+    const verificationBox = document.getElementById('verificationBox');
+    const resendBtn = document.getElementById('resendBtn');
+    const checkedBtn = document.getElementById('checkedBtn');
+    const signoutVerifyBtn = document.getElementById('signoutVerifyBtn');
+    const verifyMsg = document.getElementById('verifyMsg');
+
+    const profileForm = document.getElementById('profileForm');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    function showVerificationUI() {
+      verificationBox.classList.remove('hidden');
+      profileForm.classList.add('hidden');
+    }
+    function showProfileUI() {
+      verificationBox.classList.add('hidden');
+      profileForm.classList.remove('hidden');
+    }
+
+    onAuthStateChanged(auth, async (user)=>{
+      if(!user) {
+        // no user => go to signup page
+        window.location.href = 'auth-signup.html';
+        return;
+      }
+
+      // If the user exists but email is not verified:
+      if(!user.emailVerified) {
+        showVerificationUI();
+        verifyMsg.textContent = 'Verification email sent to ' + (user.email || 'your email') + '.';
+        // ensure a verification email was already sent earlier — optionally re-send automatically once
+      } else {
+        // verified — show profile form and load profile data
+        showProfileUI();
+        const docRef = doc(db, 'users', user.uid);
+        const snap = await getDoc(docRef);
+        if(snap.exists()){
+          const data = snap.data();
+          document.getElementById('fullName').value = data.fullName || '';
+          document.getElementById('city').value = data.city || '';
+          document.getElementById('role').value = data.role || 'Student';
+          document.getElementById('skills').value = (data.skills || []).join(', ');
+          document.getElementById('bio').value = data.bio || '';
+        } else {
+          // If user doc doesn't exist (rare), create basic doc
+          await setDoc(docRef, {
+            fullName: user.displayName || '',
+            email: user.email,
+            createdAt: new Date(),
+            profilePublic: true,
+            status: 'active'
+          });
+        }
+      }
+    });
+
+    // RESEND VERIFICATION
+    resendBtn.addEventListener('click', async ()=>{
+      const user = auth.currentUser;
+      if(!user) return alert('No signed-in user.');
+      try {
+        await sendEmailVerification(user);
+        verifyMsg.textContent = 'Verification email resent. Check your inbox.';
+      } catch(e) {
+        console.error(e);
+        alert('Error sending verification: ' + e.message);
+      }
+    });
+
+    // "I verified — continue" (reload user to pick updated emailVerified)
+    checkedBtn.addEventListener('click', async ()=>{
+      const user = auth.currentUser;
+      if(!user) return alert('No signed-in user.');
+      try {
+        // force refresh user token/state
+        await user.reload();
+        if(user.emailVerified) {
+          // show profile UI; onAuthStateChanged handler will run but also call directly:
+          showProfileUI();
+          location.reload(); // reload to trigger profile load and firestore read
+        } else {
+          verifyMsg.textContent = 'Still not verified — make sure you clicked the link in your email.';
+        }
+      } catch(e) {
+        console.error(e);
+        alert('Error checking verification: ' + e.message);
+      }
+    });
+
+    // Sign out from verification screen
+    signoutVerifyBtn.addEventListener('click', async ()=>{
+      await signOut(auth);
+      window.location.href = 'auth-login.html';
+    });
+
+    // LOGOUT BUTTON on top
+    logoutBtn.addEventListener('click', async ()=>{ await signOut(auth); window.location.href='auth-login.html'; });
+
+    // PROFILE FORM SUBMIT (save data + upload photo)
+    profileForm.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const user = auth.currentUser;
+      if(!user) return alert('Not signed in.');
+
+      const docRef = doc(db, 'users', user.uid);
+      const skillsArr = document.getElementById('skills').value.split(',').map(s=>s.trim()).filter(Boolean);
+
+      // handle photo upload
+      const file = document.getElementById('photo').files[0];
+      let photoURL = '';
+      try {
+        if(file) {
+          const storageRef = ref(storage, `profiles/${user.uid}/${file.name}`);
+          await uploadBytes(storageRef, file);
+          photoURL = await getDownloadURL(storageRef);
+        }
+        await updateDoc(docRef, {
+          fullName: document.getElementById('fullName').value,
+          city: document.getElementById('city').value,
+          role: document.getElementById('role').value,
+          skills: skillsArr,
+          bio: document.getElementById('bio').value,
+          ...(photoURL ? { photoURL } : {})
+        });
+        alert('Profile saved.');
+      } catch(err) {
+        console.error(err);
+        alert('Save failed: ' + err.message);
+      }
+    });
+
+  </script>
+</body>
+</html>
