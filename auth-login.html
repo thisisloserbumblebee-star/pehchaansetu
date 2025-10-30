@@ -4,80 +4,96 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pehchaan Setu — Login</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-</head>
-<body class="bg-gray-50 font-sans">
-  <div class="min-h-screen flex items-center justify-center">
-    <div class="w-full max-w-md p-8 bg-white rounded-xl shadow">
-      <h2 class="text-2xl font-bold text-blue-800 text-center mb-6">Login</h2>
 
-      <form id="loginForm" class="space-y-4" autocomplete="off">
-        <input id="email" type="email" placeholder="Email" required
-               class="w-full px-4 py-2 border rounded" />
-        <input id="password" type="password" placeholder="Password (6+ chars)" required
-               class="w-full px-4 py-2 border rounded" />
-        <div class="flex items-center justify-between">
-          <button id="signInBtn" type="submit"
-                  class="bg-blue-600 text-white px-4 py-2 rounded shadow">Sign in</button>
-          <a href="signup.html" class="text-sm text-blue-600 underline">Create account</a>
-        </div>
-      </form>
+  <!-- compat SDKs (must match what you used earlier) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
-      <p id="status" class="mt-4 text-sm text-gray-600"></p>
-    </div>
-  </div>
-
-  <!-- IMPORTANT: use compat urls that are known to exist -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
-
-  <!-- initialize firebase (must come after SDKs above) -->
+  <!-- your firebase-config.js (must initialize firebase) -->
   <script src="firebase-config.js"></script>
 
+  <style>
+    /* Minimal styling so layout looks OK */
+    body { font-family: Inter, system-ui, -apple-system, Arial; background:#f7fafc; }
+    .card { max-width:520px; margin:80px auto; background:#fff; border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,.06); padding:36px; }
+    h1{ color:#2546c2; text-align:center; margin-bottom:18px; }
+    input{ width:100%; padding:12px 14px; margin:10px 0; border-radius:6px; border:1px solid #e6e9ef; }
+    button{ background:#2563eb; color:#fff; border:none; padding:10px 16px; border-radius:8px; cursor:pointer;}
+    .error{ color:#b91c1c; margin-top:12px; }
+    .smalllink{ color:#2563eb; text-decoration:none; margin-left:14px; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>Login</h1>
+    <input id="email" type="email" placeholder="Email" autocomplete="email" />
+    <input id="password" type="password" placeholder="Password (6+ chars)" autocomplete="current-password" />
+    <div style="display:flex; justify-content:flex-start; align-items:center; gap:12px; margin-top:6px;">
+      <button id="signinBtn">Sign in</button>
+      <a class="smalllink" href="auth-signup.html">Create account</a>
+    </div>
+    <div id="error" class="error" role="alert" aria-live="polite"></div>
+  </div>
+
   <script>
-    (function () {
-      if (!window.firebase) {
-        console.error('Firebase SDK not loaded. Check DevTools → Network for 404s.');
-        document.getElementById('status').textContent = 'Error: Firebase SDK not loaded. Open DevTools → Network.';
-        return;
-      }
-
-      const auth = window.__firebase && window.__firebase.auth;
-      if (!auth) {
-        console.error('Firebase auth not available. Check firebase-config.js initialization.');
-        document.getElementById('status').textContent = 'Error: Firebase not configured.';
-        return;
-      }
-
-      const form = document.getElementById('loginForm');
-      const emailEl = document.getElementById('email');
-      const passEl = document.getElementById('password');
-      const status = document.getElementById('status');
-
-      form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        const email = emailEl.value.trim();
-        const password = passEl.value;
-
-        if (!email || !password) {
-          status.textContent = 'Please enter email and password.';
-          return;
-        }
-
-        status.textContent = 'Signing in…';
-        auth.signInWithEmailAndPassword(email, password)
-          .then(({ user }) => {
-            console.log('✅ Logged in:', user && user.email);
-            window.location.href = 'profile.html';
-          })
-          .catch(err => {
-            console.error('Sign-in error', err);
-            status.textContent = (err && err.message) ? err.message : 'Login failed';
-          });
-      });
+    // helper to get firebase auth (works if firebase-config.js used compat approach)
+    var auth = (function(){
+      if (window.__firebase && window.__firebase.auth) return window.__firebase.auth;
+      if (window.firebase && window.firebase.auth) return window.firebase.auth();
+      return null;
     })();
+
+    if (!auth) {
+      console.error("Firebase Auth not available. Make sure firebase-config.js and compat SDKs are loaded first.");
+      document.getElementById('error').textContent = 'Firebase not loaded. Check console.';
+    }
+
+    // redirect if already logged in
+    auth && auth.onAuthStateChanged(function(user){
+      if (user) {
+        // already signed in — send to profile
+        window.location.href = 'profile.html';
+      }
+    });
+
+    document.getElementById('signinBtn').addEventListener('click', function(){
+      document.getElementById('error').textContent = '';
+      var email = document.getElementById('email').value.trim();
+      var pw = document.getElementById('password').value;
+
+      if (!email || !pw) {
+        document.getElementById('error').textContent = 'Enter email and password.';
+        return;
+      }
+
+      auth.signInWithEmailAndPassword(email, pw)
+        .then(function(cred){
+          // success → redirect
+          window.location.href = 'profile.html';
+        })
+        .catch(function(err){
+          console.error('Sign in error', err);
+          // user friendly messages
+          if (err.code === 'auth/user-not-found') {
+            document.getElementById('error').textContent = 'No account with that email. Click Create account.';
+          } else if (err.code === 'auth/wrong-password') {
+            document.getElementById('error').textContent = 'Incorrect password.';
+          } else if (err.code === 'auth/invalid-api-key' || err.message && err.message.toLowerCase().includes('api-key')) {
+            document.getElementById('error').textContent = 'Server auth error: API key problem. See console.';
+          } else {
+            document.getElementById('error').textContent = err.message || 'Sign in failed.';
+          }
+        });
+    });
+
+    // allow Enter key to submit
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Enter') document.getElementById('signinBtn').click();
+    });
   </script>
+
 </body>
 </html>
