@@ -4,146 +4,602 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pehchaan Setu — Profile</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <style>
-    body { font-family: Inter, system-ui, -apple-system, Arial; background:#f7fafc; }
-    .card { max-width:820px; margin:48px auto; background:#fff; border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,.06); padding:28px; }
-    .muted { color:#6b7280; }
-    .avatar { width:96px; height:96px; border-radius:999px; object-fit:cover; border:2px solid #e6eefc; }
-    .topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; }
-    button { background:#ef4444; color:#fff; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <div class="topbar">
-      <h1 class="text-2xl font-bold text-blue-700">Pehchaan Setu — Profile</h1>
-      <div>
-        <button id="signoutBtn">Sign out</button>
-      </div>
-    </div>
 
-    <div id="content" style="margin-top:18px;">
-      <!-- content will be rendered here -->
-      <div id="loading" class="muted">Checking login…</div>
-    </div>
-
-    <div id="error" class="muted" style="margin-top:12px;color:#b91c1c;"></div>
-  </div>
-
-  <!-- IMPORTANT: Use the same compat SDK versions you used on login page.
-       If your login page used v8.10.1 include the same here. -->
+  <!-- Firebase v8 compat SDKs (keep these; your firebase-config.js expects compat) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-  <!-- your config (must call firebase.initializeApp inside) -->
+  <!-- Your firebase-config.js must initialize firebase (already in your repo) -->
   <script src="firebase-config.js"></script>
 
-  <script>
-    (function(){
-      const content = document.getElementById('content');
-      const loading = document.getElementById('loading');
-      const errorEl = document.getElementById('error');
-      const signoutBtn = document.getElementById('signoutBtn');
+  <style>
+    :root{--blue:#2563eb;--muted:#6b7280;--card:#fff}
+    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial; background:#f3f4f6; margin:0; color:#111}
+    .container{max-width:920px;margin:28px auto;padding:18px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .avatar{width:92px;height:92px;border-radius:999px;background:#e6e7ea;display:flex;align-items:center;justify-content:center;font-size:40px;color:#9ca3af}
+    .btn{background:var(--blue);color:#fff;padding:10px 14px;border-radius:8px;border:0;cursor:pointer}
+    .btn-ghost{background:transparent;border:1px solid #e5e7eb;padding:8px 12px;border-radius:8px;cursor:pointer}
+    .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(15,23,42,.06)}
+    .grid{display:grid;grid-template-columns:1fr 340px;gap:18px}
+    .section-title{font-weight:700;font-size:18px;margin-bottom:10px;color:#0f172a}
+    nav.tabs{display:flex;gap:8px;margin:8px 0 18px}
+    nav.tabs button{padding:8px 12px;border-radius:8px;border:1px solid #e6e9ef;background:#fff;cursor:pointer}
+    nav.tabs button.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    input[type=text], textarea, select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9ef;margin-bottom:10px;box-sizing:border-box}
+    textarea{min-height:100px;resize:vertical}
+    ul.list{list-style:none;padding:0;margin:0}
+    ul.list li{padding:10px;border-radius:8px;border:1px solid #eef2f7;margin-bottom:8px;background:#fff;display:flex;justify-content:space-between;align-items:flex-start}
+    .meta{color:var(--muted);font-size:13px;margin-top:6px}
+    .small{font-size:13px;color:var(--muted)}
+    .section-actions{display:flex;gap:8px;align-items:center}
+    .danger{background:#ef4444;color:#fff;border:0;padding:6px 8px;border-radius:6px;cursor:pointer}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#eef2ff;color:var(--blue);font-weight:600}
+    .note{color:#6b7280;font-size:13px;margin-top:8px}
+    .footer{margin-top:20px;color:var(--muted);font-size:13px}
+  </style>
+</head>
+<body>
 
-      function dbg(...a){ console.log('[PROFILE]', ...a); }
-      function showError(t){ errorEl.textContent = t; dbg('ERR', t); }
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div style="font-size:20px;font-weight:800;color:var(--blue)">Pehchaan Setu — Profile</div>
+        <div class="small" id="userEmail" style="margin-left:8px;color:var(--muted)"></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <button id="editToggle" class="btn-ghost">Edit profile</button>
+        <button id="signOutBtn" class="btn">Sign out</button>
+      </div>
+    </header>
 
-      // guard that firebase compat is loaded
-      if (!window.firebase || typeof firebase.auth !== 'function') {
-        showError('Firebase not loaded. Check firebase-config.js and SDK includes (compat).');
-        loading && (loading.textContent = '');
-        throw new Error('Firebase compat not loaded');
-      }
+    <div class="grid">
+      <!-- left: main -->
+      <div>
+        <div class="card" id="profileCard" style="margin-bottom:18px">
+          <div style="display:flex;gap:16px;align-items:center">
+            <div id="avatar" class="avatar">—</div>
+            <div style="flex:1">
+              <div id="displayName" style="font-size:20px;font-weight:700">—</div>
+              <div id="displayEmail" class="meta">—</div>
+              <div class="note" id="profileStatus"></div>
+            </div>
+          </div>
+        </div>
 
-      const auth = firebase.auth();
-      const db = firebase.firestore ? firebase.firestore() : null;
-
-      // Listen for auth state
-      auth.onAuthStateChanged(async function(user){
-        dbg('onAuthStateChanged ->', user ? user.uid : null);
-        if (!user) {
-          // no user -> go back to login page
-          loading && (loading.textContent = '');
-          // navigate to the login page in same folder
-          const loginUrl = location.origin + location.pathname.replace(/\/[^/]*$/, '/') + 'auth-login.html';
-          dbg('No user, redirecting to:', loginUrl);
-          // small timeout so UI updates are flushed
-          setTimeout(()=> location.href = loginUrl, 80);
-          return;
-        }
-
-        // user exists -> render profile
-        loading && (loading.remove && loading.remove());
-        renderProfile(user);
-      });
-
-      function renderProfile(user){
-        // show basic info
-        const displayName = user.displayName || '—';
-        const email = user.email || '—';
-        const photoURL = user.photoURL || '';
-
-        // build DOM
-        content.innerHTML = `
-          <div style="display:flex; gap:18px; align-items:center;">
-            <img id="avatar" src="${escapeHtml(photoURL || 'https://www.gravatar.com/avatar/?d=mp')}" alt="avatar" class="avatar">
-            <div>
-              <div style="font-weight:700; font-size:18px;">${escapeHtml(displayName)}</div>
-              <div class="muted" style="margin-top:6px;">Email: <strong>${escapeHtml(email)}</strong></div>
+        <div class="card" style="margin-bottom:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="section-title">About</div>
+            <div class="section-actions">
+              <button id="saveAboutBtn" class="btn" style="display:none">Save</button>
+              <button id="cancelAboutBtn" class="btn-ghost" style="display:none">Cancel</button>
             </div>
           </div>
 
-          <section style="margin-top:20px;">
-            <h3 class="text-lg font-semibold">About</h3>
-            <p class="muted" id="aboutText">Loading profile data…</p>
-          </section>
+          <div id="aboutView">
+            <p id="aboutText" class="small">—</p>
+          </div>
 
-          <section style="margin-top:14px;">
-            <h3 class="text-lg font-semibold">Skills</h3>
-            <div id="skillsEl" class="muted">—</div>
-          </section>
-        `;
+          <div id="aboutEdit" style="display:none;margin-top:8px">
+            <label for="aboutInput">Write something about yourself</label>
+            <textarea id="aboutInput" placeholder="Tell people about yourself..."></textarea>
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              <button id="saveAbout" class="btn">Save About</button>
+              <button id="cancelAbout" class="btn-ghost">Cancel</button>
+            </div>
+          </div>
+        </div>
 
-        // load profile doc from Firestore (if you store it in users/<uid>)
-        if (db) {
-          const docRef = db.collection('users').doc(user.uid);
-          docRef.get().then(docSnap => {
-            if (!docSnap.exists) {
-              dbg('No users doc for', user.uid);
-              document.getElementById('aboutText').textContent = 'No profile yet';
-              return;
-            }
-            const data = docSnap.data();
-            document.getElementById('aboutText').textContent = data.bio || data.about || 'No about text.';
-            document.getElementById('skillsEl').textContent = (data.skills && data.skills.length) ? data.skills.join(', ') : '—';
-          }).catch(e => {
-            dbg('Error reading profile doc', e);
-            document.getElementById('aboutText').textContent = 'Failed to load profile.';
-          });
-        } else {
-          document.getElementById('aboutText').textContent = 'Profile storage not configured.';
-        }
+        <!-- tabs for other sections -->
+        <div class="card">
+          <nav class="tabs" id="tabs">
+            <button data-tab="activity" class="active">Activity</button>
+            <button data-tab="experience">Experience</button>
+            <button data-tab="education">Education</button>
+            <button data-tab="skills">Skills</button>
+            <button data-tab="languages">Languages</button>
+          </nav>
+
+          <div id="tabContent">
+            <!-- Activity -->
+            <div data-panel="activity">
+              <div style="display:flex;gap:8px;margin-bottom:12px">
+                <input id="activityInput" type="text" placeholder="Share an update..." />
+                <button id="postActivity" class="btn">Post</button>
+              </div>
+              <ul id="activityList" class="list"><!-- posts appear --></ul>
+            </div>
+
+            <!-- Experience -->
+            <div data-panel="experience" style="display:none">
+              <label for="expCompany">Company</label>
+              <input id="expCompany" type="text" placeholder="Company name" />
+              <label for="expRole">Role</label>
+              <input id="expRole" type="text" placeholder="Role / title" />
+              <label for="expFrom">From</label>
+              <input id="expFrom" type="text" placeholder="e.g. 2019" />
+              <label for="expTo">To</label>
+              <input id="expTo" type="text" placeholder="e.g. 2021 or Present" />
+              <label for="expDesc">Description</label>
+              <textarea id="expDesc" placeholder="Describe what you did..."></textarea>
+              <div style="display:flex;gap:8px;justify-content:flex-end">
+                <button id="addExperience" class="btn">Add Experience</button>
+              </div>
+
+              <hr style="margin:14px 0" />
+              <ul id="experienceList" class="list"></ul>
+            </div>
+
+            <!-- Education -->
+            <div data-panel="education" style="display:none">
+              <label for="eduSchool">School / College</label>
+              <input id="eduSchool" type="text" placeholder="Institution name" />
+              <label for="eduDegree">Degree</label>
+              <input id="eduDegree" type="text" placeholder="Degree or course" />
+              <label for="eduYear">Year</label>
+              <input id="eduYear" type="text" placeholder="e.g. 2018" />
+              <label for="eduDesc">Notes</label>
+              <textarea id="eduDesc" placeholder="Any notes..."></textarea>
+              <div style="display:flex;gap:8px;justify-content:flex-end">
+                <button id="addEducation" class="btn">Add Education</button>
+              </div>
+
+              <hr style="margin:14px 0" />
+              <ul id="educationList" class="list"></ul>
+            </div>
+
+            <!-- Skills -->
+            <div data-panel="skills" style="display:none">
+              <div style="display:flex;gap:8px;margin-bottom:12px">
+                <input id="skillInput" type="text" placeholder="Add a skill (e.g. JavaScript)" />
+                <button id="addSkill" class="btn">Add</button>
+              </div>
+              <ul id="skillsList" class="list"></ul>
+            </div>
+
+            <!-- Languages -->
+            <div data-panel="languages" style="display:none">
+              <div style="display:flex;gap:8px;margin-bottom:12px">
+                <input id="languageInput" type="text" placeholder="Add a language (e.g. Hindi)" />
+                <button id="addLanguage" class="btn">Add</button>
+              </div>
+              <ul id="languagesList" class="list"></ul>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- right column: profile summary / quick actions -->
+      <aside>
+        <div class="card" style="margin-bottom:16px">
+          <div class="section-title">Quick actions</div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+            <button id="goToEdit" class="btn">Edit profile</button>
+            <button id="goToLogin" class="btn-ghost">Back to dashboard</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Profile info</div>
+          <div class="small">UID</div>
+          <div id="uidView" class="pill" style="margin-top:6px">—</div>
+          <div class="footer">Changes are saved to Firestore in <code>users/{uid}</code>.</div>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+
+<script>
+(function(){
+  // Firestore field names used
+  const USER_DOC = 'users';
+
+  // Selectors
+  const avatarEl = document.getElementById('avatar');
+  const nameEl = document.getElementById('displayName');
+  const emailEl = document.getElementById('displayEmail');
+  const aboutText = document.getElementById('aboutText');
+  const aboutEdit = document.getElementById('aboutEdit');
+  const aboutView = document.getElementById('aboutView');
+  const aboutInput = document.getElementById('aboutInput');
+  const saveAbout = document.getElementById('saveAbout');
+  const cancelAbout = document.getElementById('cancelAbout');
+  const signOutBtn = document.getElementById('signOutBtn');
+  const editToggle = document.getElementById('editToggle');
+  const uidView = document.getElementById('uidView');
+  const userEmailHeader = document.getElementById('userEmail');
+
+  // tabs
+  const tabs = document.querySelectorAll('#tabs button');
+  const panels = Array.from(document.querySelectorAll('[data-panel]'));
+
+  // lists
+  const activityList = document.getElementById('activityList');
+  const experienceList = document.getElementById('experienceList');
+  const educationList = document.getElementById('educationList');
+  const skillsList = document.getElementById('skillsList');
+  const languagesList = document.getElementById('languagesList');
+
+  // inputs
+  const activityInput = document.getElementById('activityInput');
+  const postActivity = document.getElementById('postActivity');
+
+  const expCompany = document.getElementById('expCompany');
+  const expRole = document.getElementById('expRole');
+  const expFrom = document.getElementById('expFrom');
+  const expTo = document.getElementById('expTo');
+  const expDesc = document.getElementById('expDesc');
+  const addExperienceBtn = document.getElementById('addExperience');
+
+  const eduSchool = document.getElementById('eduSchool');
+  const eduDegree = document.getElementById('eduDegree');
+  const eduYear = document.getElementById('eduYear');
+  const eduDesc = document.getElementById('eduDesc');
+  const addEducationBtn = document.getElementById('addEducation');
+
+  const skillInput = document.getElementById('skillInput');
+  const addSkillBtn = document.getElementById('addSkill');
+
+  const languageInput = document.getElementById('languageInput');
+  const addLanguageBtn = document.getElementById('addLanguage');
+
+  // helper uid generator for list items
+  function genId(){ return 'id_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8); }
+
+  // Wait for firebase to be ready (v8 compat)
+  if (!window.firebase || !firebase.firestore) {
+    alert('Firebase not loaded. Make sure firebase-config.js and compat SDK are included.');
+    throw new Error('Firebase not loaded');
+  }
+
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  // Verify user signed in, if not, redirect to login
+  auth.onAuthStateChanged(user => {
+    if (!user) {
+      // redirect to login
+      window.location.href = './auth-login.html';
+      return;
+    }
+    // now we have user -> setup doc listener
+    userEmailHeader.textContent = user.email || '';
+    uidView.textContent = user.uid;
+    startUserListener(user.uid);
+  });
+
+  let unsub = null;
+  let currentDoc = null; // local snapshot
+
+  function startUserListener(uid){
+    const docRef = db.collection(USER_DOC).doc(uid);
+    // create doc if missing with basic fields
+    docRef.get().then(snap => {
+      if (!snap.exists) {
+        docRef.set({
+          fullName: '',
+          email: auth.currentUser.email || '',
+          bio: '',
+          activity: [],
+          experience: [],
+          education: [],
+          skills: [],
+          languages: [],
+          profilePublic: true,
+          status: 'active',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true }).catch(console.error);
       }
+    }).catch(console.error);
 
-      // sign out handler
-      signoutBtn.addEventListener('click', function(){
-        dbg('Sign out clicked');
-        auth.signOut().then(()=> {
-          dbg('Signed out ok, redirect to login');
-          const loginUrl = location.origin + location.pathname.replace(/\/[^/]*$/, '/') + 'auth-login.html';
-          location.href = loginUrl;
-        }).catch(err => {
-          showError('Sign out failed: ' + (err && err.message ? err.message : String(err)));
-        });
+    // Subscribe for realtime updates
+    if (unsub) unsub();
+    unsub = docRef.onSnapshot(docSnap => {
+      if (!docSnap.exists) return;
+      currentDoc = docSnap.data();
+      renderProfile(currentDoc);
+    }, err => {
+      console.error('profile onSnapshot error', err);
+    });
+  }
+
+  // Render UI from Firestore doc
+  function renderProfile(doc){
+    nameEl.textContent = doc.fullName || '—';
+    emailEl.textContent = doc.email || auth.currentUser.email || '—';
+    aboutText.textContent = doc.bio || '—';
+    aboutInput.value = doc.bio || '';
+
+    avatarEl.textContent = doc.fullName ? (doc.fullName.split(' ').map(s=>s[0]).slice(0,2).join('')) : '—';
+    uidView.textContent = (auth.currentUser && auth.currentUser.uid) || '—';
+    userEmailHeader.textContent = (auth.currentUser && auth.currentUser.email) || '';
+
+    // Activity
+    renderList(activityList, doc.activity || [], renderActivityItem);
+
+    // Experience
+    renderList(experienceList, doc.experience || [], renderExperienceItem);
+
+    // Education
+    renderList(educationList, doc.education || [], renderEducationItem);
+
+    // Skills
+    renderList(skillsList, doc.skills || [], renderSkillItem);
+
+    // Languages
+    renderList(languagesList, doc.languages || [], renderLanguageItem);
+  }
+
+  // generic list renderer
+  function renderList(container, items, renderFn){
+    container.innerHTML = '';
+    if (!items || items.length === 0) {
+      const el = document.createElement('div');
+      el.className = 'small';
+      el.style.padding = '8px 0';
+      el.textContent = '—';
+      container.appendChild(el);
+      return;
+    }
+    items.slice().reverse().forEach(item => {
+      const li = document.createElement('li');
+      li.innerHTML = '';
+      renderFn(li, item);
+      container.appendChild(li);
+    });
+  }
+
+  // Renderers for each item
+  function renderActivityItem(li, item){
+    const left = document.createElement('div');
+    left.style.flex = '1';
+    const text = document.createElement('div');
+    text.textContent = item.text || '';
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.textContent = (new Date(item.createdAt && item.createdAt.seconds ? item.createdAt.seconds*1000 : item.createdAt || Date.now())).toLocaleString();
+    left.appendChild(text); left.appendChild(meta);
+
+    const right = document.createElement('div');
+    const del = document.createElement('button');
+    del.className = 'danger';
+    del.textContent = 'Delete';
+    del.addEventListener('click', ()=> removeItem('activity', item.id));
+    right.appendChild(del);
+
+    li.appendChild(left); li.appendChild(right);
+  }
+
+  function renderExperienceItem(li, item){
+    const left = document.createElement('div');
+    left.style.flex = '1';
+    const title = document.createElement('div');
+    title.style.fontWeight = '700';
+    title.textContent = (item.role || '—') + ' @ ' + (item.company || '—');
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.textContent = (item.from || '') + ' — ' + (item.to || '');
+    const desc = document.createElement('div');
+    desc.className = 'small';
+    desc.textContent = item.description || '';
+    left.appendChild(title); left.appendChild(meta); left.appendChild(desc);
+
+    const right = document.createElement('div');
+    const del = document.createElement('button');
+    del.className = 'danger';
+    del.textContent = 'Delete';
+    del.addEventListener('click', ()=> removeItemById('experience', item.id));
+    right.appendChild(del);
+
+    li.appendChild(left); li.appendChild(right);
+  }
+
+  function renderEducationItem(li, item){
+    const left = document.createElement('div');
+    left.style.flex = '1';
+    const title = document.createElement('div');
+    title.style.fontWeight = '700';
+    title.textContent = item.school || '—';
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.textContent = (item.degree || '') + ' • ' + (item.year || '');
+    const desc = document.createElement('div');
+    desc.className = 'small';
+    desc.textContent = item.notes || '';
+    left.appendChild(title); left.appendChild(meta); left.appendChild(desc);
+
+    const right = document.createElement('div');
+    const del = document.createElement('button');
+    del.className = 'danger';
+    del.textContent = 'Delete';
+    del.addEventListener('click', ()=> removeItemById('education', item.id));
+    right.appendChild(del);
+
+    li.appendChild(left); li.appendChild(right);
+  }
+
+  function renderSkillItem(li, item){
+    const left = document.createElement('div'); left.textContent = item;
+    const right = document.createElement('div');
+    const del = document.createElement('button'); del.className='danger'; del.textContent='Delete';
+    del.addEventListener('click', ()=> removePrimitive('skills', item));
+    right.appendChild(del);
+    li.appendChild(left); li.appendChild(right);
+  }
+
+  function renderLanguageItem(li, item){
+    const left = document.createElement('div'); left.textContent = item;
+    const right = document.createElement('div');
+    const del = document.createElement('button'); del.className='danger'; del.textContent='Delete';
+    del.addEventListener('click', ()=> removePrimitive('languages', item));
+    right.appendChild(del);
+    li.appendChild(left); li.appendChild(right);
+  }
+
+  // helpers to update Firestore
+  function setUserField(uid, patch){
+    return db.collection(USER_DOC).doc(uid).set(patch, { merge: true });
+  }
+
+  function replaceArray(uid, fieldName, newArray){
+    const patch = {}; patch[fieldName] = newArray;
+    return db.collection(USER_DOC).doc(uid).set(patch, { merge: true });
+  }
+
+  function removePrimitive(fieldName, value){
+    const uid = auth.currentUser.uid;
+    const docRef = db.collection(USER_DOC).doc(uid);
+    docRef.get().then(snap => {
+      const data = snap.data() || {};
+      const arr = data[fieldName] || [];
+      const filtered = arr.filter(x => x !== value);
+      return replaceArray(uid, fieldName, filtered);
+    }).catch(console.error);
+  }
+
+  function removeItemById(fieldName, id){
+    const uid = auth.currentUser.uid;
+    const docRef = db.collection(USER_DOC).doc(uid);
+    docRef.get().then(snap => {
+      const data = snap.data() || {};
+      const arr = data[fieldName] || [];
+      const filtered = arr.filter(x => x.id !== id);
+      return replaceArray(uid, fieldName, filtered);
+    }).catch(console.error);
+  }
+
+  function removeItem(fieldName, itemObj){
+    // for objects: remove by id
+    if (itemObj && itemObj.id) return removeItemById(fieldName, itemObj.id);
+    // fallback: remove exact object equality
+    const uid = auth.currentUser.uid;
+    const docRef = db.collection(USER_DOC).doc(uid);
+    docRef.get().then(snap => {
+      const data = snap.data() || {};
+      const arr = data[fieldName] || [];
+      const filtered = arr.filter(x => JSON.stringify(x) !== JSON.stringify(itemObj));
+      return replaceArray(uid, fieldName, filtered);
+    }).catch(console.error);
+  }
+
+  // Adders
+  postActivity.addEventListener('click', ()=> {
+    const text = activityInput.value && activityInput.value.trim();
+    if (!text) return;
+    const uid = auth.currentUser.uid;
+    const docRef = db.collection(USER_DOC).doc(uid);
+    docRef.get().then(snap => {
+      const data = snap.data() || {};
+      const a = data.activity || [];
+      a.push({ id: genId(), text, createdAt: Date.now() });
+      return replaceArray(uid, 'activity', a);
+    }).then(()=> activityInput.value = '').catch(console.error);
+  });
+
+  addExperienceBtn.addEventListener('click', ()=>{
+    const company = expCompany.value.trim();
+    const role = expRole.value.trim();
+    if (!company || !role) return alert('Company and Role required');
+    const obj = { id: genId(), company, role, from: expFrom.value.trim(), to: expTo.value.trim(), description: expDesc.value.trim() };
+    const uid = auth.currentUser.uid;
+    const docRef = db.collection(USER_DOC).doc(uid);
+    docRef.get().then(snap => {
+      const data = snap.data() || {};
+      const arr = data.experience || [];
+      arr.push(obj);
+      return replaceArray(uid, 'experience', arr);
+    }).then(()=>{
+      expCompany.value=''; expRole.value=''; expFrom.value=''; expTo.value=''; expDesc.value='';
+    }).catch(console.error);
+  });
+
+  addEducationBtn.addEventListener('click', ()=>{
+    const school = eduSchool.value.trim();
+    if (!school) return alert('School is required');
+    const obj = { id: genId(), school, degree: eduDegree.value.trim(), year: eduYear.value.trim(), notes: eduDesc.value.trim() };
+    const uid = auth.currentUser.uid;
+    const docRef = db.collection(USER_DOC).doc(uid);
+    docRef.get().then(snap => {
+      const data = snap.data() || {};
+      const arr = data.education || [];
+      arr.push(obj);
+      return replaceArray(uid, 'education', arr);
+    }).then(()=>{
+      eduSchool.value=''; eduDegree.value=''; eduYear.value=''; eduDesc.value='';
+    }).catch(console.error);
+  });
+
+  addSkillBtn.addEventListener('click', ()=>{
+    const v = skillInput.value && skillInput.value.trim();
+    if (!v) return;
+    const uid = auth.currentUser.uid;
+    const docRef = db.collection(USER_DOC).doc(uid);
+    docRef.get().then(snap=>{
+      const data = snap.data() || {};
+      const arr = data.skills || [];
+      // avoid duplicates
+      if (arr.indexOf(v) === -1) arr.push(v);
+      return replaceArray(uid, 'skills', arr);
+    }).then(()=> skillInput.value='').catch(console.error);
+  });
+
+  addLanguageBtn.addEventListener('click', ()=>{
+    const v = languageInput.value && languageInput.value.trim();
+    if (!v) return;
+    const uid = auth.currentUser.uid;
+    const docRef = db.collection(USER_DOC).doc(uid);
+    docRef.get().then(snap=>{
+      const data = snap.data() || {};
+      const arr = data.languages || [];
+      if (arr.indexOf(v) === -1) arr.push(v);
+      return replaceArray(uid, 'languages', arr);
+    }).then(()=> languageInput.value='').catch(console.error);
+  });
+
+  // About editing
+  document.getElementById('editToggle').addEventListener('click', ()=> {
+    aboutView.style.display = 'none'; aboutEdit.style.display = 'block';
+    document.getElementById('saveAbout').style.display='inline-block';
+    document.getElementById('saveAbout').focus();
+  });
+  document.getElementById('cancelAbout').addEventListener('click', ()=> {
+    aboutEdit.style.display = 'none'; aboutView.style.display = 'block';
+    aboutInput.value = aboutText.textContent;
+  });
+  saveAbout.addEventListener('click', ()=>{
+    const uid = auth.currentUser.uid;
+    const value = aboutInput.value.trim();
+    setUserField(uid, { bio: value }).then(()=> {
+      aboutEdit.style.display='none'; aboutView.style.display='block';
+    }).catch(err => alert('Save failed: ' + err.message));
+  });
+
+  // Sign out
+  signOutBtn.addEventListener('click', ()=>{
+    auth.signOut().then(()=> {
+      window.location.href = './auth-login.html';
+    }).catch(err => alert('Sign out failed: ' + err.message));
+  });
+
+  // tabs navigation
+  tabs.forEach(t => {
+    t.addEventListener('click', () => {
+      tabs.forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      const tab = t.getAttribute('data-tab');
+      panels.forEach(p => {
+        p.style.display = p.getAttribute('data-panel') === tab ? '' : 'none';
       });
+    });
+  });
 
-      // small helper
-      function escapeHtml(s){
-        return String(s || '').replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; });
-      }
-    })();
-  </script>
+})(); // end IIFE
+</script>
+
 </body>
 </html>
