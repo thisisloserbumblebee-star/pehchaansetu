@@ -10,10 +10,10 @@
   <div class="max-w-md w-full bg-white rounded-xl shadow-md p-8">
     <h1 class="text-2xl font-bold mb-4">Create your Pehchaan</h1>
 
-    <form id="authSignupForm" class="space-y-3">
+    <form id="authSignupForm" class="space-y-3" autocomplete="off">
       <input name="fullName" placeholder="Full name" required class="w-full p-2 border rounded" />
-      <input name="email" type="email" placeholder="Email" required class="w-full p-2 border rounded" />
-      <input name="password" type="password" placeholder="Password (6+ chars)" required class="w-full p-2 border rounded" />
+      <input id="signupEmail" name="email" type="email" placeholder="Email" required class="w-full p-2 border rounded" />
+      <input id="signupPassword" name="password" type="password" placeholder="Password (6+ chars)" required class="w-full p-2 border rounded" />
       <div class="flex justify-between items-center">
         <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Create account</button>
         <button type="button" id="googleBtn" class="bg-white border px-3 py-2 rounded">Sign in with Google</button>
@@ -23,59 +23,84 @@
     <p class="text-sm text-gray-500 mt-3">Already a member? <a href="auth-login.html" class="text-blue-600">Login</a></p>
   </div>
 
-  <!-- Firebase config (we already added firebase-config.js earlier) -->
-  <script type="module" src="firebase-config.js"></script>
+  <!-- IMPORTANT: use v8 compat SDKs (match your login page) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
-  <script type="module">
-    import { createUserWithEmailAndPassword, sendEmailVerification, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-auth.js";
-    import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-firestore.js";
+  <!-- your firebase-config (must be compat style and initialized) -->
+  <script src="firebase-config.js"></script>
 
-    const auth = window.__firebase.auth;
-    const db = window.__firebase.db;
-
-    document.getElementById('authSignupForm').addEventListener('submit', async (e)=>{
-      e.preventDefault();
-      const name = e.target.fullName.value.trim();
-      const email = e.target.email.value.trim();
-      const pass = e.target.password.value;
-      try{
-        const userCred = await createUserWithEmailAndPassword(auth, email, pass);
-        await sendEmailVerification(userCred.user);
-        await setDoc(doc(db, 'users', userCred.user.uid), {
-          fullName: name,
-          email,
-          city: '',
-          role: '',
-          skills: [],
-          bio: '',
-          createdAt: serverTimestamp(),
-          profilePublic: true,
-          status: 'new'
-        });
-        alert('Account created. Check your email to verify.');
-        window.location.href = 'profile.html';
-      } catch(err){
-        alert(err.message);
-        console.error(err);
+  <script>
+    // All compat (v8) code — no modules
+    (function () {
+      if (!window.firebase || !firebase.auth) {
+        console.error('Firebase compat not loaded. Check SDK lines above and firebase-config.js');
+        alert('Firebase not loaded. Check console.');
+        return;
       }
-    });
 
-    document.getElementById('googleBtn').addEventListener('click', async ()=>{
-      const provider = new GoogleAuthProvider();
-      try{
-        const res = await signInWithPopup(auth, provider);
-        const u = res.user;
-        await setDoc(doc(db, 'users', u.uid), {
-          fullName: u.displayName || '',
-          email: u.email,
-          photoURL: u.photoURL || '',
-          createdAt: serverTimestamp(),
-          profilePublic: true,
-          status: 'active'
-        }, { merge: true });
-        window.location.href = 'profile.html';
-      } catch(e){ console.error(e); alert(e.message); }
-    });
+      var auth = firebase.auth();
+      var db = firebase.firestore();
+
+      // form submit: create user, send email verification, create user doc
+      document.getElementById('authSignupForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        var name = (e.target.fullName.value || '').trim();
+        var email = (e.target.email.value || '').trim();
+        var pass = e.target.password.value;
+
+        if (!name || !email || !pass) {
+          return alert('Enter name, email and password.');
+        }
+
+        try {
+          var userCred = await auth.createUserWithEmailAndPassword(email, pass);
+          // send verification
+          try { await userCred.user.sendEmailVerification(); } catch (verr) { console.warn('verification send failed', verr); }
+          // create user document
+          await db.collection('users').doc(userCred.user.uid).set({
+            fullName: name,
+            email: email,
+            city: '',
+            role: '',
+            skills: [],
+            bio: '',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            profilePublic: true,
+            status: 'new'
+          });
+          alert('Account created. Check your email to verify.');
+          location.href = 'profile.html';
+        } catch (err) {
+          console.error('Signup error', err);
+          alert(err.message || 'Signup failed');
+        }
+      });
+
+      // Google sign-in (compat)
+      document.getElementById('googleBtn').addEventListener('click', async function () {
+        var provider = new firebase.auth.GoogleAuthProvider();
+        try {
+          var res = await auth.signInWithPopup(provider);
+          var u = res.user;
+          // ensure user doc exists / merge
+          await db.collection('users').doc(u.uid).set({
+            fullName: u.displayName || '',
+            email: u.email || '',
+            photoURL: u.photoURL || '',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            profilePublic: true,
+            status: 'active'
+          }, { merge: true });
+          location.href = 'profile.html';
+        } catch (e) {
+          console.error('Google sign-in failed', e);
+          alert(e.message || 'Google sign-in failed');
+        }
+      });
+    })();
   </script>
 </body>
 </html>
