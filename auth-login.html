@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Pehchaan Setu — Login</title>
+  <title>Pehchaan Setu — Login (debug)</title>
 
   <!-- compat SDKs (v8) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -11,165 +11,178 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
-  <!-- firebase-config (compat) -->
+  <!-- your firebase-config.js -->
   <script src="firebase-config.js"></script>
 
   <style>
     body { font-family: Inter, system-ui, -apple-system, Arial; background:#f7fafc; }
-    .card { max-width:520px; margin:80px auto; background:#fff; border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,.06); padding:36px; }
-    h1{ color:#2546c2; text-align:center; margin-bottom:18px; }
+    .card { max-width:520px; margin:60px auto; background:#fff; border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,.06); padding:28px; }
+    h1{ color:#2546c2; text-align:center; margin-bottom:12px; }
     input{ width:100%; padding:12px 14px; margin:10px 0; border-radius:6px; border:1px solid #e6e9ef; box-sizing:border-box; }
     button{ background:#2563eb; color:#fff; border:none; padding:10px 16px; border-radius:8px; cursor:pointer;}
     .error{ color:#b91c1c; margin-top:12px; white-space:pre-wrap; }
+    .ok{ color:#065f46; margin-top:12px; }
     .smalllink{ color:#2563eb; text-decoration:none; margin-left:14px; }
-    .ok { color:#065f46; margin-top:10px; }
+    .debug{ margin-top:12px; font-size:13px; color:#444; }
   </style>
 </head>
 <body>
 
   <div class="card" role="main" aria-labelledby="pageTitle">
-    <h1 id="pageTitle">Login</h1>
+    <h1 id="pageTitle">Login (debug)</h1>
 
-    <label for="email" style="display:none">Email</label>
     <input id="email" type="email" placeholder="Email" autocomplete="email" />
-
-    <label for="password" style="display:none">Password</label>
     <input id="password" type="password" placeholder="Password (6+ chars)" autocomplete="current-password" />
 
-    <div style="display:flex; justify-content:flex-start; align-items:center; gap:12px; margin-top:6px;">
+    <div style="display:flex; gap:12px; align-items:center; margin-top:6px;">
       <button id="signinBtn" type="button">Sign in</button>
       <a class="smalllink" href="auth-signup.html">Create account</a>
     </div>
 
     <div id="error" class="error" role="alert" aria-live="polite"></div>
     <div id="ok" class="ok" aria-live="polite"></div>
+
+    <div class="debug">
+      <button id="whoBtn" type="button">Show currentUser (debug)</button>
+      <div id="who" style="margin-top:6px; color:#333"></div>
+    </div>
   </div>
 
   <script>
   (function(){
-    const PROFILE_FILENAME = 'profile.html';
+    const PROFILE_FILENAME = 'profile.html';               // expected filename in same folder
     const errorEl = document.getElementById('error');
     const okEl = document.getElementById('ok');
     const signinBtn = document.getElementById('signinBtn');
     const emailEl = document.getElementById('email');
     const pwEl = document.getElementById('password');
+    const whoBtn = document.getElementById('whoBtn');
+    const whoEl = document.getElementById('who');
 
-    function log(...args){ console.log('[auth-login]', ...args); }
+    function log(...a){ console.log('[auth-login]', ...a); }
     function showError(msg){ console.error('[auth-login]', msg); errorEl.textContent = typeof msg === 'string' ? msg : (msg && msg.message) ? msg.message : String(msg); okEl.textContent = ''; }
     function showOk(msg){ okEl.textContent = msg; errorEl.textContent = ''; }
 
-    // simple relative profile URL (keeps things simple on GitHub Pages)
-    function profileUrlRelative() {
-      return PROFILE_FILENAME;
+    // Build two redirect candidates: relative and repo-root absolute
+    function relativeProfile() {
+      return PROFILE_FILENAME; // relative in same folder
+    }
+    function absoluteRepoProfile() {
+      // folder is first segment of pathname (example: /pehchaansetu/auth-login.html)
+      const parts = location.pathname.split('/').filter(Boolean);
+      if (parts.length === 0) return PROFILE_FILENAME;
+      const repoFolder = parts[0]; // e.g. "pehchaansetu"
+      return location.origin + '/' + repoFolder + '/' + PROFILE_FILENAME;
     }
 
-    // wait for firebase (compat v8) to be initialized
-    function waitForFirebase(timeoutMs = 4000, intervalMs = 100) {
+    // wait for firebase compat v8
+    function waitForFirebase(ms = 4000) {
       return new Promise((resolve, reject) => {
         const start = Date.now();
-        (function check(){
+        (function chk(){
           if (window.firebase && typeof window.firebase.auth === 'function') {
-            try {
-              if (firebase.apps && firebase.apps.length > 0) {
-                resolve(firebase);
-                return;
-              }
-            } catch(e){}
+            try { if (firebase.apps && firebase.apps.length > 0) { resolve(firebase); return; } } catch(e){}
           }
-          if (Date.now() - start > timeoutMs) {
-            reject(new Error('Firebase compat SDK not detected within timeout.'));
-          } else {
-            setTimeout(check, intervalMs);
-          }
+          if (Date.now() - start > ms) reject(new Error('Firebase not found within timeout.'));
+          else setTimeout(chk, 100);
         })();
       });
     }
 
-    waitForFirebase().then((firebaseLib) => {
+    waitForFirebase().then(firebaseLib => {
       const auth = firebaseLib.auth();
-      log('Firebase ready. projectId=', (firebaseLib.app && firebaseLib.app().options && firebaseLib.app().options.projectId) || 'unknown');
+      log('Firebase initialized OK for project:', (firebaseLib.app && firebaseLib.app().options && firebaseLib.app().options.projectId) || 'unknown');
 
-      // Defensive onAuthStateChanged redirect — if page is an auth page, go to profile
+      // onAuthStateChanged log
       if (typeof auth.onAuthStateChanged === 'function') {
-        auth.onAuthStateChanged(function(user) {
-          log('onAuthStateChanged fired — user:', user ? (user.email || user.uid) : null);
-          if (user) {
-            // if current file is a login or signup page, redirect to profile
+        auth.onAuthStateChanged(u => {
+          log('onAuthStateChanged -> user:', u ? (u.email || u.uid) : null);
+          if (u) {
+            showOk('Already signed in: ' + (u.email || u.uid));
+            // try redirect only if we are on a login/auth page
             const currentFile = location.pathname.split('/').pop() || '';
-            if (currentFile.indexOf('auth-') !== -1 || currentFile.indexOf('login') !== -1) {
-              const rel = profileUrlRelative();
-              log('User is signed in — redirecting to', rel);
-              // try robust redirect: assign, then replace as fallback
-              try { location.assign(rel); } catch(e){ location.href = rel; }
+            if (currentFile.toLowerCase().includes('auth') || currentFile.toLowerCase().includes('login')) {
+              // try relative first then absolute repo path
+              const rel = relativeProfile();
+              const abs = absoluteRepoProfile();
+              log('Redirecting (onAuthStateChanged): trying rel=', rel, ' abs=', abs);
+              // try assign, if doesn't change after delay try abs
+              try {
+                location.assign(rel);
+                setTimeout(() => {
+                  if (!location.pathname.endsWith(PROFILE_FILENAME)) {
+                    log('Rel redirect failed — trying absolute repo path', abs);
+                    location.assign(abs);
+                  }
+                }, 350);
+              } catch(e) {
+                log('assign(rel) failed:', e);
+                try { location.href = abs; } catch(e2){ console.error(e2); }
+              }
             }
           }
         });
-      } else {
-        log('auth.onAuthStateChanged not available (unexpected).');
-      }
+      } else log('onAuthStateChanged not available');
 
-      // Sign-in handler
+      // sign-in handler
       signinBtn.addEventListener('click', function(){
-        errorEl.textContent = '';
-        okEl.textContent = '';
-        const email = emailEl.value.trim();
-        const pw = pwEl.value;
+        errorEl.textContent = ''; okEl.textContent = ''; whoEl.textContent = '';
+        const email = emailEl.value.trim(); const pw = pwEl.value;
+        if (!email || !pw) { showError('Enter email and password.'); return; }
+        signinBtn.disabled = true; const prevText = signinBtn.textContent; signinBtn.textContent = 'Signing in...';
 
-        if (!email || !pw) {
-          showError('Enter email and password.');
-          return;
-        }
-
-        signinBtn.disabled = true;
-        const previousText = signinBtn.textContent;
-        signinBtn.textContent = 'Signing in...';
-
+        log('Calling signInWithEmailAndPassword for', email);
         auth.signInWithEmailAndPassword(email, pw)
-          .then(function(cred){
-            log('signInWithEmailAndPassword succeeded:', cred && cred.user && (cred.user.email || cred.user.uid));
-            showOk('Signed in — redirecting...');
-            // robust redirect sequence:
-            const rel = profileUrlRelative();
-            // immediate try
+          .then(cred => {
+            log('signIn success:', cred && cred.user && (cred.user.email || cred.user.uid), cred);
+            showOk('Signed in: ' + (cred.user.email || cred.user.uid));
+            // confirm currentUser exists
+            const cu = auth.currentUser;
+            log('auth.currentUser after signIn:', cu);
+            whoEl.textContent = cu ? (cu.email || cu.uid) : 'no currentUser';
+
+            // Try three redirect techniques (robust)
+            const rel = relativeProfile();
+            const abs = absoluteRepoProfile();
+            log('Attempting redirects: rel=', rel, ' abs=', abs);
+
             try {
               location.assign(rel);
-              // also schedule a safety redirect after short delay (in case browser blocked immediate assign)
-              setTimeout(function(){
-                if (location.pathname.indexOf(PROFILE_FILENAME) === -1) {
-                  try { location.replace(rel); } catch(e){ location.href = rel; }
+              // safety fallback after short delay
+              setTimeout(() => {
+                if (!location.pathname.endsWith(PROFILE_FILENAME)) {
+                  try {
+                    log('Rel did not work — trying abs');
+                    location.assign(abs);
+                  } catch(e){ console.error('abs assign failed', e); }
                 }
-              }, 300);
-            } catch(e){
-              console.error('Redirect attempt failed, will fallback', e);
-              try { location.href = rel; } catch(e2) { console.error('Final redirect method failed', e2); }
+              }, 350);
+            } catch(e) {
+              console.error('assign(rel) failed', e);
+              try { location.href = abs; } catch(e2) { console.error('final redirect failed', e2); }
             }
           })
-          .catch(function(err){
-            console.error('Sign in error', err);
-            if (err && err.code === 'auth/user-not-found') {
-              showError('No account with that email. Click Create account.');
-            } else if (err && err.code === 'auth/wrong-password') {
-              showError('Incorrect password.');
-            } else if (err && (err.code === 'auth/invalid-api-key' || (err.message && err.message.toLowerCase().includes('api key')))) {
-              showError('Server authentication error: API key invalid. Check firebase-config.js (see console).');
-            } else {
-              showError(err && err.message ? err.message : 'Sign in failed.');
-            }
+          .catch(err => {
+            console.error('signIn error', err);
+            if (err && err.code === 'auth/user-not-found') showError('No account with that email. Click Create account.');
+            else if (err && err.code === 'auth/wrong-password') showError('Incorrect password.');
+            else if (err && (err.code === 'auth/invalid-api-key' || (err.message && err.message.toLowerCase().includes('api key')))) showError('API key issue. Check firebase-config.js');
+            else showError(err && err.message ? err.message : 'Sign in failed.');
           })
-          .finally(function(){
-            signinBtn.disabled = false;
-            signinBtn.textContent = previousText;
-          });
+          .finally(() => { signinBtn.disabled = false; signinBtn.textContent = prevText; });
       });
 
-      // keyboard-friendly
-      [emailEl, pwEl].forEach(el => el.addEventListener('keydown', e => {
-        if (e.key === 'Enter') { e.preventDefault(); signinBtn.click(); }
-      }));
+      whoBtn.addEventListener('click', function(){
+        try {
+          const cu = firebaseLib.auth().currentUser;
+          console.log('DEBUG currentUser:', cu);
+          whoEl.textContent = cu ? JSON.stringify({ uid: cu.uid, email: cu.email, emailVerified: cu.emailVerified }, null, 0) : 'null';
+        } catch(e) { console.error(e); whoEl.textContent = 'error reading currentUser'; }
+      });
 
-    }).catch(function(err){
-      showError('Firebase not loaded. Check firebase-config.js & compat SDKs. See console for details.');
-      console.error(err);
+    }).catch(err => {
+      showError('Firebase not available — check console.');
+      console.error('waitForFirebase error', err);
     });
 
   })();
