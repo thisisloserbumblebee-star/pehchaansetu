@@ -1,140 +1,62 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Pehchaan Setu — Your Profile</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <title>Pehchaan Setu — Profile</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="firebase-config.js"></script>
+  <style>
+    body{ font-family: Inter, Arial; background:#f7fafc; }
+    .wrap{ max-width:880px; margin:60px auto; padding:28px; background:#fff; border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,.06); }
+    .top{ display:flex; justify-content:space-between; align-items:center; }
+    button{ background:#e11d48; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;}
+  </style>
 </head>
-
-<body class="bg-gray-50 min-h-screen text-gray-800">
-  <div class="max-w-5xl mx-auto py-10 px-4">
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-blue-900">Your Profile</h1>
-      <button id="logoutBtn" class="bg-red-500 text-white px-4 py-2 rounded">Logout</button>
-    </div>
-
-    <!-- Profile Photo + Basic Info -->
-    <div class="bg-white p-6 rounded shadow mb-6">
-      <div class="flex items-center gap-6">
-        <img id="profilePhoto" src="https://via.placeholder.com/120" alt="Profile Photo" class="w-28 h-28 rounded-full object-cover border">
-        <div>
-          <input type="file" id="photoUpload" accept="image/*" class="mb-2 block" />
-          <h2 class="text-xl font-semibold" id="userName"></h2>
-          <p class="text-gray-600" id="userEmail"></p>
-        </div>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <h1 id="name">Your Profile</h1>
+      <div>
+        <button id="signoutBtn">Sign out</button>
       </div>
     </div>
 
-    <!-- About Section -->
-    <div class="bg-white p-6 rounded shadow mb-6">
-      <h3 class="text-xl font-semibold mb-3">About</h3>
-      <textarea id="about" rows="4" class="w-full p-2 border rounded" placeholder="Tell us about yourself..."></textarea>
-    </div>
+    <p id="emailLine"></p>
 
-    <!-- Experience Section -->
-    <div class="bg-white p-6 rounded shadow mb-6">
-      <h3 class="text-xl font-semibold mb-3">Experience</h3>
-      <div id="experienceList"></div>
-      <button id="addExperience" class="bg-blue-600 text-white px-4 py-2 rounded mt-3">+ Add Experience</button>
-    </div>
-
-    <!-- Education Section -->
-    <div class="bg-white p-6 rounded shadow mb-6">
-      <h3 class="text-xl font-semibold mb-3">Education</h3>
-      <div id="educationList"></div>
-      <button id="addEducation" class="bg-blue-600 text-white px-4 py-2 rounded mt-3">+ Add Education</button>
-    </div>
-
-    <!-- Skills -->
-    <div class="bg-white p-6 rounded shadow mb-6">
-      <h3 class="text-xl font-semibold mb-3">Skills</h3>
-      <input id="skills" class="w-full p-2 border rounded" placeholder="Add skills, separated by commas" />
-    </div>
-
-    <!-- Licenses & Certifications -->
-    <div class="bg-white p-6 rounded shadow mb-6">
-      <h3 class="text-xl font-semibold mb-3">Licenses & Certifications</h3>
-      <div id="licensesList"></div>
-      <button id="addLicense" class="bg-blue-600 text-white px-4 py-2 rounded mt-3">+ Add License</button>
-    </div>
-
-    <!-- Languages -->
-    <div class="bg-white p-6 rounded shadow mb-6">
-      <h3 class="text-xl font-semibold mb-3">Languages</h3>
-      <input id="languages" class="w-full p-2 border rounded" placeholder="E.g. English, Hindi, Spanish" />
-    </div>
-
-    <!-- Save Button -->
-    <div class="text-center">
-      <button id="saveProfile" class="bg-green-600 text-white px-8 py-3 rounded-lg shadow hover:bg-green-700">Save Profile</button>
-    </div>
+    <h3>About</h3>
+    <p id="about">Add an about section in the profile editor (coming soon).</p>
   </div>
 
-  <!-- Firebase Config -->
-  <script type="module" src="firebase-config.js"></script>
+  <script>
+    var auth = (function(){
+      if (window.__firebase && window.__firebase.auth) return window.__firebase.auth;
+      if (window.firebase && window.firebase.auth) return window.firebase.auth();
+      return null;
+    })();
 
-  <script type="module">
-    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-auth.js";
-    import { doc, setDoc, getDoc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-firestore.js";
-    import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-storage.js";
+    if (!auth) {
+      console.error("Firebase Auth missing!");
+      alert("Firebase not loaded. Check console.");
+    }
 
-    const auth = window.__firebase.auth;
-    const db = window.__firebase.db;
-    const storage = window.__firebase.storage;
-
-    const logoutBtn = document.getElementById('logoutBtn');
-    const saveProfile = document.getElementById('saveProfile');
-    const photoUpload = document.getElementById('photoUpload');
-    const profilePhoto = document.getElementById('profilePhoto');
-    const userNameEl = document.getElementById('userName');
-    const userEmailEl = document.getElementById('userEmail');
-
-    let currentUser;
-
-    onAuthStateChanged(auth, async (user) => {
+    // protect route
+    auth.onAuthStateChanged(function(user){
       if (!user) {
+        // not signed in
         window.location.href = 'auth-login.html';
         return;
       }
-      currentUser = user;
-      userNameEl.textContent = user.displayName || '';
-      userEmailEl.textContent = user.email || '';
-
-      const docRef = doc(db, 'users', user.uid);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
-        const data = snap.data();
-        document.getElementById('about').value = data.about || '';
-        document.getElementById('skills').value = (data.skills || []).join(', ');
-        document.getElementById('languages').value = (data.languages || []).join(', ');
-        if (data.photoURL) profilePhoto.src = data.photoURL;
-      }
+      // display basic info
+      document.getElementById('name').textContent = user.displayName || 'Pehchaan Setu User';
+      document.getElementById('emailLine').textContent = 'Email: ' + (user.email || '(no email)');
     });
 
-    logoutBtn.addEventListener('click', async () => {
-      await signOut(auth);
-      window.location.href = 'auth-login.html';
-    });
-
-    saveProfile.addEventListener('click', async () => {
-      const about = document.getElementById('about').value;
-      const skills = document.getElementById('skills').value.split(',').map(s => s.trim());
-      const languages = document.getElementById('languages').value.split(',').map(l => l.trim());
-      const docRef = doc(db, 'users', currentUser.uid);
-
-      await updateDoc(docRef, { about, skills, languages });
-      alert('Profile updated successfully!');
-    });
-
-    photoUpload.addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file || !currentUser) return;
-      const storageRef = ref(storage, `profiles/${currentUser.uid}/${file.name}`);
-      await uploadBytes(storageRef, file);
-      const photoURL = await getDownloadURL(storageRef);
-      profilePhoto.src = photoURL;
-      await updateDoc(doc(db, 'users', currentUser.uid), { photoURL });
+    document.getElementById('signoutBtn').addEventListener('click', function(){
+      auth.signOut().then(function(){
+        window.location.href = 'auth-login.html';
+      });
     });
   </script>
 </body>
