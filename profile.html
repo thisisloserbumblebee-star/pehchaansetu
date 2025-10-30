@@ -3,80 +3,147 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Pehchaan Setu — Login</title>
+  <title>Pehchaan Setu — Profile</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    body { font-family: Inter, system-ui, -apple-system, Arial; background:#f7fafc; }
+    .card { max-width:820px; margin:48px auto; background:#fff; border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,.06); padding:28px; }
+    .muted { color:#6b7280; }
+    .avatar { width:96px; height:96px; border-radius:999px; object-fit:cover; border:2px solid #e6eefc; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    button { background:#ef4444; color:#fff; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; }
+  </style>
 </head>
-<body class="bg-gray-100 font-sans">
-  <div class="min-h-screen flex items-center justify-center">
-    <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
-      <h2 class="text-center text-2xl font-bold text-blue-700 mb-6">Login</h2>
-      <div id="error" class="text-red-600 mb-4"></div>
-
-      <input id="email" type="email" placeholder="Email"
-        class="w-full mb-3 p-3 border rounded" />
-
-      <input id="password" type="password" placeholder="Password (6+ chars)"
-        class="w-full mb-4 p-3 border rounded" />
-
-      <div class="flex items-center justify-between">
-        <button id="signinBtn" class="bg-blue-600 text-white px-4 py-2 rounded shadow">Sign in</button>
-        <a href="auth-signup.html" class="text-blue-600">Create account</a>
+<body>
+  <div class="card">
+    <div class="topbar">
+      <h1 class="text-2xl font-bold text-blue-700">Pehchaan Setu — Profile</h1>
+      <div>
+        <button id="signoutBtn">Sign out</button>
       </div>
     </div>
+
+    <div id="content" style="margin-top:18px;">
+      <!-- content will be rendered here -->
+      <div id="loading" class="muted">Checking login…</div>
+    </div>
+
+    <div id="error" class="muted" style="margin-top:12px;color:#b91c1c;"></div>
   </div>
 
-  <!-- Firebase compat CDN (must be compat for firebase.auth() style) -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <!-- IMPORTANT: Use the same compat SDK versions you used on login page.
+       If your login page used v8.10.1 include the same here. -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-  <!-- Your firebase config: replace the placeholders in firebase-config.js -->
+  <!-- your config (must call firebase.initializeApp inside) -->
   <script src="firebase-config.js"></script>
 
   <script>
-    // quick guards
-    if (!window.firebase || !firebase.auth) {
-      document.getElementById('error').innerText = 'Firebase not loaded correctly. Check console.';
-      console.error('Firebase compat not loaded');
-    }
+    (function(){
+      const content = document.getElementById('content');
+      const loading = document.getElementById('loading');
+      const errorEl = document.getElementById('error');
+      const signoutBtn = document.getElementById('signoutBtn');
 
-    const errorEl = document.getElementById('error');
-    const emailEl = document.getElementById('email');
-    const passEl = document.getElementById('password');
-    const signinBtn = document.getElementById('signinBtn');
+      function dbg(...a){ console.log('[PROFILE]', ...a); }
+      function showError(t){ errorEl.textContent = t; dbg('ERR', t); }
 
-    signinBtn.addEventListener('click', async () => {
-      errorEl.textContent = '';
-      try {
-        const email = emailEl.value.trim();
-        const password = passEl.value;
-        if (!email || !password) throw new Error('Enter email and password');
+      // guard that firebase compat is loaded
+      if (!window.firebase || typeof firebase.auth !== 'function') {
+        showError('Firebase not loaded. Check firebase-config.js and SDK includes (compat).');
+        loading && (loading.textContent = '');
+        throw new Error('Firebase compat not loaded');
+      }
 
-        const userCred = await firebase.auth().signInWithEmailAndPassword(email, password);
-        // on success -> redirect to profile page
-        window.location.href = 'profile.html';
-      } catch (err) {
-        console.error('Sign in error', err);
-        // friendly message
-        if (err.code) {
-          errorEl.textContent = `Firebase: ${err.code} — ${err.message}`;
+      const auth = firebase.auth();
+      const db = firebase.firestore ? firebase.firestore() : null;
+
+      // Listen for auth state
+      auth.onAuthStateChanged(async function(user){
+        dbg('onAuthStateChanged ->', user ? user.uid : null);
+        if (!user) {
+          // no user -> go back to login page
+          loading && (loading.textContent = '');
+          // navigate to the login page in same folder
+          const loginUrl = location.origin + location.pathname.replace(/\/[^/]*$/, '/') + 'auth-login.html';
+          dbg('No user, redirecting to:', loginUrl);
+          // small timeout so UI updates are flushed
+          setTimeout(()=> location.href = loginUrl, 80);
+          return;
+        }
+
+        // user exists -> render profile
+        loading && (loading.remove && loading.remove());
+        renderProfile(user);
+      });
+
+      function renderProfile(user){
+        // show basic info
+        const displayName = user.displayName || '—';
+        const email = user.email || '—';
+        const photoURL = user.photoURL || '';
+
+        // build DOM
+        content.innerHTML = `
+          <div style="display:flex; gap:18px; align-items:center;">
+            <img id="avatar" src="${escapeHtml(photoURL || 'https://www.gravatar.com/avatar/?d=mp')}" alt="avatar" class="avatar">
+            <div>
+              <div style="font-weight:700; font-size:18px;">${escapeHtml(displayName)}</div>
+              <div class="muted" style="margin-top:6px;">Email: <strong>${escapeHtml(email)}</strong></div>
+            </div>
+          </div>
+
+          <section style="margin-top:20px;">
+            <h3 class="text-lg font-semibold">About</h3>
+            <p class="muted" id="aboutText">Loading profile data…</p>
+          </section>
+
+          <section style="margin-top:14px;">
+            <h3 class="text-lg font-semibold">Skills</h3>
+            <div id="skillsEl" class="muted">—</div>
+          </section>
+        `;
+
+        // load profile doc from Firestore (if you store it in users/<uid>)
+        if (db) {
+          const docRef = db.collection('users').doc(user.uid);
+          docRef.get().then(docSnap => {
+            if (!docSnap.exists) {
+              dbg('No users doc for', user.uid);
+              document.getElementById('aboutText').textContent = 'No profile yet';
+              return;
+            }
+            const data = docSnap.data();
+            document.getElementById('aboutText').textContent = data.bio || data.about || 'No about text.';
+            document.getElementById('skillsEl').textContent = (data.skills && data.skills.length) ? data.skills.join(', ') : '—';
+          }).catch(e => {
+            dbg('Error reading profile doc', e);
+            document.getElementById('aboutText').textContent = 'Failed to load profile.';
+          });
         } else {
-          errorEl.textContent = err.message || 'Sign in failed';
+          document.getElementById('aboutText').textContent = 'Profile storage not configured.';
         }
       }
-    });
 
-    // If you want to auto-redirect logged-in users (optional)
-    firebase.auth().onAuthStateChanged(user => {
-      if (user) {
-        // Already signed in => go to profile
-        // But only redirect if you're on the login page and not already in profile
-        if (!location.pathname.endsWith('/profile.html')) {
-          // keep it explicit; remove if it creates loops
-          // window.location.href = 'profile.html';
-        }
+      // sign out handler
+      signoutBtn.addEventListener('click', function(){
+        dbg('Sign out clicked');
+        auth.signOut().then(()=> {
+          dbg('Signed out ok, redirect to login');
+          const loginUrl = location.origin + location.pathname.replace(/\/[^/]*$/, '/') + 'auth-login.html';
+          location.href = loginUrl;
+        }).catch(err => {
+          showError('Sign out failed: ' + (err && err.message ? err.message : String(err)));
+        });
+      });
+
+      // small helper
+      function escapeHtml(s){
+        return String(s || '').replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; });
       }
-    });
+    })();
   </script>
 </body>
 </html>
