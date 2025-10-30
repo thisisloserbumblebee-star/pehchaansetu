@@ -1,8 +1,45 @@
-<!-- ✅ Correct Firebase compat CDN scripts -->
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login — Pehchaan Setu</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
 
-<!-- Your firebase config -->
-<script src="firebase-config.js"></script>
+    <!-- ✅ Correct Firebase compat CDN scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+
+    <!-- ✅ Firebase Config -->
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyDfhdfkopi9k_y6s44rsCQRfKfXCGUsCYs",
+        authDomain: "pehchaan-setu.firebaseapp.com",
+        projectId: "pehchaan-setu",
+        storageBucket: "pehchaan-setu.appspot.com",
+        messagingSenderId: "868115882621",
+        appId: "1:868115882621:web:4617eee0266fb1d22818714",
+        measurementId: "G-SC0GNZHMY5"
+      };
+
+      firebase.initializeApp(firebaseConfig);
+      const auth = firebase.auth();
+    </script>
+  </head>
+
+  <body class="bg-gray-50 flex items-center justify-center h-screen">
+    <div class="bg-white shadow-md rounded-lg p-8 w-96">
+      <h2 class="text-2xl font-bold text-center mb-6 text-blue-900">
+        Login
+      </h2>
+
+      <input
+        type="email"
+        id="email"
+        placeholder="Email"
+        class="w-full p-3 mb-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blu
