@@ -1,9 +1,7 @@
 // firebase-config.js
-// This file must be loaded AFTER the compatibility Firebase SDK scripts.
-// It uses the compat API and exposes a small global window.__firebase object.
+// Must be loaded AFTER the compat SDK scripts above.
 
 (function () {
-  // Replace with your Firebase config if different.
   var firebaseConfig = {
     apiKey: "AIzaSyD1dfkopi9k_y6s44rsCQKRfXCK6UsCY5s",
     authDomain: "pehchaan-setu.firebaseapp.com",
@@ -20,13 +18,14 @@
   }
 
   try {
-    window.firebase.initializeApp(firebaseConfig);
-    var auth = window.firebase.auth();
-    var db = window.firebase.firestore();
-    var storage = window.firebase.storage();
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    var auth = firebase.auth();
+    var db = firebase.firestore();
+    var storage = firebase.storage();
 
-    // Expose for other pages/scripts
-    window.__firebase = { app: window.firebase.app(), auth: auth, db: db, storage: storage };
+    window.__firebase = { app: firebase.app(), auth: auth, db: db, storage: storage };
     console.log('Firebase initialized OK');
   } catch (e) {
     console.error('Firebase init error', e);
