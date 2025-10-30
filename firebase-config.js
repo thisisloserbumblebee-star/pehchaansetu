@@ -1,33 +1,29 @@
-// firebase-config.js
-// MUST be loaded after the compat SDK scripts in the page (firebase-app-compat.js etc)
-
+// firebase-config.js — compat style (loaded after firebase-app-compat.js)
 (function () {
-  // <-- replace the values below with the object from Firebase Console (Project settings → SDK snippet → Config)
-  var firebaseConfig = {
-    apiKey: "PUT_YOUR_REAL_API_KEY_HERE",
-    authDomain: "PUT_YOUR_REAL_AUTH_DOMAIN_HERE",
-    projectId: "PUT_YOUR_REAL_PROJECT_ID_HERE",
-    storageBucket: "PUT_YOUR_REAL_STORAGE_BUCKET_HERE",
-    messagingSenderId: "PUT_YOUR_REAL_MESSAGING_SENDER_ID_HERE",
-    appId: "PUT_YOUR_REAL_APP_ID_HERE",
-    measurementId: "PUT_YOUR_REAL_MEASUREMENT_ID_IF_ANY"
+  // REPLACE these values with your Firebase project's actual config (from Firebase Console)
+  const firebaseConfig = {
+    
+
+     apiKey: "AIzaSyD1dfkopi9k_y6s44rsCQKRfXCX6UsCY5s",
+  authDomain: "pehchaan-setu.firebaseapp.com",
+  projectId: "pehchaan-setu",
+  storageBucket: "pehchaan-setu.firebasestorage.app",
+  messagingSenderId: "868115882621",
+  appId: "1:868115882621:web:4617ee0266fb1d22818714",
+  measurementId: "G-53QDYFKN7R"
   };
 
-  if (!window.firebase) {
-    console.error('Firebase global not found. Make sure firebase-app-compat.js is loaded.');
+  // initialize
+  if (!window.firebase || !firebase.initializeApp) {
+    console.error('firebase compat not available');
     return;
   }
 
   try {
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-    var auth = firebase.auth();
-    var db = firebase.firestore();
-    var storage = firebase.storage();
-
-    window.__firebase = { app: firebase.app(), auth: auth, db: db, storage: storage };
+    firebase.initializeApp(firebaseConfig);
     console.log('Firebase initialized OK for project:', firebaseConfig.projectId);
+    // make firebase global (already on window.firebase)
+    window.__firebase = firebase;
   } catch (e) {
     console.error('Firebase init error', e);
   }
