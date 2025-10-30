@@ -1,46 +1,34 @@
-// firebase-config.js  -- COMPAT (v8) style
-// Paste this file in your project root (same folder as your pages),
-// and make sure the HTML pages load it AFTER the firebase v8 SDK <script> tags.
+// firebase-config.js
+// MUST be loaded after the compat SDK scripts in the page (firebase-app-compat.js etc)
 
-(function(){
-  // firebase client config (from your project)
+(function () {
+  // <-- replace the values below with the object from Firebase Console (Project settings → SDK snippet → Config)
   var firebaseConfig = {
-    apiKey: "AIzaSyD1dfkopi9k_y6s44rsCQKRfXCK6UsCY5s",
-    authDomain: "pehchaan-setu.firebaseapp.com",
-    projectId: "pehchaan-setu",
-    storageBucket: "pehchaan-setu.appspot.com",
-    messagingSenderId: "868115882621",
-    appId: "1:868115882621:web:4617ee0266fb1d22818714",
-    measurementId: "G-SC0GNZHMY5"
+    apiKey: "PUT_YOUR_REAL_API_KEY_HERE",
+    authDomain: "PUT_YOUR_REAL_AUTH_DOMAIN_HERE",
+    projectId: "PUT_YOUR_REAL_PROJECT_ID_HERE",
+    storageBucket: "PUT_YOUR_REAL_STORAGE_BUCKET_HERE",
+    messagingSenderId: "PUT_YOUR_REAL_MESSAGING_SENDER_ID_HERE",
+    appId: "PUT_YOUR_REAL_APP_ID_HERE",
+    measurementId: "PUT_YOUR_REAL_MEASUREMENT_ID_IF_ANY"
   };
 
-  // initialize app (v8 compat)
-  if (!window.firebase || !window.firebase.initializeApp) {
-    console.error('Firebase v8 SDK not loaded. Make sure firebase-app.js (v8) script tag is present.');
+  if (!window.firebase) {
+    console.error('Firebase global not found. Make sure firebase-app-compat.js is loaded.');
     return;
   }
 
-  // Avoid double-init in dev hot reloads
   try {
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
-      if (firebase.analytics) {
-        try { firebase.analytics(); } catch(e) {}
-      }
-    } else {
-      firebase.app(); // already initialized
     }
+    var auth = firebase.auth();
+    var db = firebase.firestore();
+    var storage = firebase.storage();
+
+    window.__firebase = { app: firebase.app(), auth: auth, db: db, storage: storage };
+    console.log('Firebase initialized OK for project:', firebaseConfig.projectId);
   } catch (e) {
     console.error('Firebase init error', e);
   }
-
-  // export commonly used handles to a single container for your pages
-  window.__firebase = {
-    app: firebase.app(),
-    auth: firebase.auth(),
-    db: firebase.firestore(),
-    storage: firebase.storage()
-  };
-
-  console.log('Firebase initialized OK');
 })();
