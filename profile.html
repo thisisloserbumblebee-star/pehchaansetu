@@ -3,60 +3,79 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Pehchaan Setu — Profile</title>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="firebase-config.js"></script>
-  <style>
-    body{ font-family: Inter, Arial; background:#f7fafc; }
-    .wrap{ max-width:880px; margin:60px auto; padding:28px; background:#fff; border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,.06); }
-    .top{ display:flex; justify-content:space-between; align-items:center; }
-    button{ background:#e11d48; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;}
-  </style>
+  <title>Pehchaan Setu — Login</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body>
-  <div class="wrap">
-    <div class="top">
-      <h1 id="name">Your Profile</h1>
-      <div>
-        <button id="signoutBtn">Sign out</button>
+<body class="bg-gray-100 font-sans">
+  <div class="min-h-screen flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+      <h2 class="text-center text-2xl font-bold text-blue-700 mb-6">Login</h2>
+      <div id="error" class="text-red-600 mb-4"></div>
+
+      <input id="email" type="email" placeholder="Email"
+        class="w-full mb-3 p-3 border rounded" />
+
+      <input id="password" type="password" placeholder="Password (6+ chars)"
+        class="w-full mb-4 p-3 border rounded" />
+
+      <div class="flex items-center justify-between">
+        <button id="signinBtn" class="bg-blue-600 text-white px-4 py-2 rounded shadow">Sign in</button>
+        <a href="auth-signup.html" class="text-blue-600">Create account</a>
       </div>
     </div>
-
-    <p id="emailLine"></p>
-
-    <h3>About</h3>
-    <p id="about">Add an about section in the profile editor (coming soon).</p>
   </div>
 
-  <script>
-    var auth = (function(){
-      if (window.__firebase && window.__firebase.auth) return window.__firebase.auth;
-      if (window.firebase && window.firebase.auth) return window.firebase.auth();
-      return null;
-    })();
+  <!-- Firebase compat CDN (must be compat for firebase.auth() style) -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
-    if (!auth) {
-      console.error("Firebase Auth missing!");
-      alert("Firebase not loaded. Check console.");
+  <!-- Your firebase config: replace the placeholders in firebase-config.js -->
+  <script src="firebase-config.js"></script>
+
+  <script>
+    // quick guards
+    if (!window.firebase || !firebase.auth) {
+      document.getElementById('error').innerText = 'Firebase not loaded correctly. Check console.';
+      console.error('Firebase compat not loaded');
     }
 
-    // protect route
-    auth.onAuthStateChanged(function(user){
-      if (!user) {
-        // not signed in
-        window.location.href = 'auth-login.html';
-        return;
+    const errorEl = document.getElementById('error');
+    const emailEl = document.getElementById('email');
+    const passEl = document.getElementById('password');
+    const signinBtn = document.getElementById('signinBtn');
+
+    signinBtn.addEventListener('click', async () => {
+      errorEl.textContent = '';
+      try {
+        const email = emailEl.value.trim();
+        const password = passEl.value;
+        if (!email || !password) throw new Error('Enter email and password');
+
+        const userCred = await firebase.auth().signInWithEmailAndPassword(email, password);
+        // on success -> redirect to profile page
+        window.location.href = 'profile.html';
+      } catch (err) {
+        console.error('Sign in error', err);
+        // friendly message
+        if (err.code) {
+          errorEl.textContent = `Firebase: ${err.code} — ${err.message}`;
+        } else {
+          errorEl.textContent = err.message || 'Sign in failed';
+        }
       }
-      // display basic info
-      document.getElementById('name').textContent = user.displayName || 'Pehchaan Setu User';
-      document.getElementById('emailLine').textContent = 'Email: ' + (user.email || '(no email)');
     });
 
-    document.getElementById('signoutBtn').addEventListener('click', function(){
-      auth.signOut().then(function(){
-        window.location.href = 'auth-login.html';
-      });
+    // If you want to auto-redirect logged-in users (optional)
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) {
+        // Already signed in => go to profile
+        // But only redirect if you're on the login page and not already in profile
+        if (!location.pathname.endsWith('/profile.html')) {
+          // keep it explicit; remove if it creates loops
+          // window.location.href = 'profile.html';
+        }
+      }
     });
   </script>
 </body>
