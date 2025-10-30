@@ -5,17 +5,16 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pehchaan Setu — Login</title>
 
-  <!-- compat SDKs (v8 compat lines you already used) -->
+  <!-- compat SDKs (v8) - you already used these -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
-  <!-- your firebase-config.js (this must initialize firebase with your API key / project) -->
+  <!-- your firebase-config.js (must call firebase.initializeApp({...})) -->
   <script src="firebase-config.js"></script>
 
   <style>
-    /* Minimal styling so layout looks OK */
     body { font-family: Inter, system-ui, -apple-system, Arial; background:#f7fafc; }
     .card { max-width:520px; margin:80px auto; background:#fff; border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,.06); padding:36px; }
     h1{ color:#2546c2; text-align:center; margin-bottom:18px; }
@@ -46,36 +45,43 @@
 
   <script>
   (function(){
+    const PROFILE_FILENAME = 'profile.html'; // change only if your profile file is named differently
     const errorEl = document.getElementById('error');
     const signinBtn = document.getElementById('signinBtn');
     const emailEl = document.getElementById('email');
     const pwEl = document.getElementById('password');
 
-    // Wait for firebase to be ready (compat v8). Retry for a short while.
-    function waitForFirebase(timeoutMs = 5000, intervalMs = 150) {
+    function log(...args){ console.log('[auth-login]', ...args); }
+    function showError(msg){ console.error('[auth-login]', msg); errorEl.textContent = typeof msg === 'string' ? msg : (msg && msg.message) ? msg.message : String(msg); }
+
+    // compute absolute profile URL in same folder as current file
+    function profileUrl() {
+      const p = location.pathname;
+      const base = p.replace(/\/[^/]*$/, '/'); // remove last segment
+      return location.origin + base + PROFILE_FILENAME;
+    }
+
+    // wait for firebase compat v8 to be available and initialized (short timeout)
+    function waitForFirebase(timeoutMs = 4000, intervalMs = 100) {
       return new Promise((resolve, reject) => {
         const start = Date.now();
         (function check(){
-          // compat SDK exposes firebase and firebase.auth
           if (window.firebase && typeof window.firebase.auth === 'function') {
             try {
-              // ensure firebase app is initialized
+              // if firebase apps have been initialized, return firebase
               if (firebase.apps && firebase.apps.length > 0) {
                 resolve(firebase);
                 return;
               }
-              // if firebase.app hasn't been initialized yet, sometimes firebase.initializeApp is in config and runs next tick
-              if (typeof firebase.initializeApp === 'function' && (window.__firebaseInitialized === true || (firebase.apps && firebase.apps.length > 0))) {
+              // If firebase-config runs later but initializeApp has been called, treat as ready
+              if (typeof firebase.initializeApp === 'function' && firebase.apps && firebase.apps.length > 0) {
                 resolve(firebase);
                 return;
               }
-            } catch(e){
-              // fallthrough to retry
-            }
+            } catch(e){ /* ignore and retry */ }
           }
-
           if (Date.now() - start > timeoutMs) {
-            reject(new Error('Firebase not available after waiting.'));
+            reject(new Error('Firebase compat SDK not detected within timeout.'));
           } else {
             setTimeout(check, intervalMs);
           }
@@ -83,35 +89,29 @@
       });
     }
 
-    function showError(msg) {
-      console.error(msg);
-      errorEl.textContent = typeof msg === 'string' ? msg : (msg && msg.message) ? msg.message : String(msg);
-    }
-
-    // main init
     waitForFirebase().then((firebaseLib) => {
-      // get auth instance (compat)
       const auth = firebaseLib.auth();
+      log('Firebase initialized OK for project:', (firebaseLib.app && firebaseLib.app().options && firebaseLib.app().options.projectId) || 'unknown');
 
-      console.log('Firebase initialized OK for project:', (firebaseLib && firebaseLib.app && firebaseLib.app().options && firebaseLib.app().options.projectId) || 'unknown');
-
-      // If already signed in, redirect to profile (but avoid infinite redirect if already on profile)
-      auth.onAuthStateChanged(function(user){
-        if (user) {
-          // user logged in
-          console.log('User is signed in:', user.email || user.uid);
-          // if current page is login page, redirect to profile
-          const path = location.pathname.split('/').pop();
-          if (path && path.indexOf('profile') === -1 && path.indexOf('auth-') !== -1) {
-            // redirect to profile page
-            window.location.href = 'profile.html';
+      // onAuthStateChanged: if user present and we're on a login page, redirect to profile
+      if (typeof auth.onAuthStateChanged === 'function') {
+        auth.onAuthStateChanged(function(user) {
+          log('onAuthStateChanged fired — user:', user ? (user.email || user.uid) : null);
+          if (user) {
+            const currentFile = location.pathname.split('/').pop();
+            // only redirect from auth pages (avoid redirect loop)
+            if (currentFile && currentFile.indexOf('auth-') !== -1) {
+              const url = profileUrl();
+              log('Redirecting to profile (onAuthStateChanged):', url);
+              location.href = url;
+            }
           }
-        } else {
-          console.log('No user signed in');
-        }
-      });
+        });
+      } else {
+        log('auth.onAuthStateChanged not found; auth API may be wrong version.');
+      }
 
-      // sign-in handler
+      // sign-in handler (also redirects directly as fallback)
       signinBtn.addEventListener('click', function(){
         errorEl.textContent = '';
         const email = emailEl.value.trim();
@@ -127,16 +127,18 @@
 
         auth.signInWithEmailAndPassword(email, pw)
           .then(function(cred){
-            // success -> onAuthStateChanged will redirect; but redirect here as fallback
+            log('signInWithEmailAndPassword success:', (cred && cred.user && (cred.user.email || cred.user.uid)));
+            // redirect explicitly (onAuthStateChanged will also fire)
             try {
-              window.location.href = 'profile.html';
-            } catch(e){
-              console.log('Redirect failed', e);
+              const url = profileUrl();
+              log('Direct redirect to profile:', url);
+              location.href = url;
+            } catch(e) {
+              console.error('Redirect failed', e);
             }
           })
           .catch(function(err){
             console.error('Sign in error', err);
-            // friendly messages
             if (err && err.code === 'auth/user-not-found') {
               showError('No account with that email. Click Create account.');
             } else if (err && err.code === 'auth/wrong-password') {
@@ -144,27 +146,22 @@
             } else if (err && (err.code === 'auth/invalid-api-key' || (err.message && err.message.toLowerCase().includes('api key')))) {
               showError('Server authentication error: API key invalid. Check firebase-config.js (see console).');
             } else {
-              showError(err.message || 'Sign in failed.');
+              showError(err && err.message ? err.message : 'Sign in failed.');
             }
-          }).finally(function(){
+          })
+          .finally(function(){
             signinBtn.disabled = false;
             signinBtn.textContent = 'Sign in';
           });
       });
 
-      // Enter key triggers sign-in if focus inside inputs
-      [emailEl, pwEl].forEach(function(el){
-        el.addEventListener('keydown', function(e){
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            signinBtn.click();
-          }
-        });
-      });
+      // keyboard-friendly
+      [emailEl, pwEl].forEach(el => el.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); signinBtn.click(); }
+      }));
 
     }).catch(function(err){
-      // firebase did not appear in time
-      showError('Firebase not loaded. Check that firebase-config.js is present and that the compat SDKs are included. See console for details.');
+      showError('Firebase not loaded. Check firebase-config.js & compat SDKs. See console for details.');
       console.error(err);
     });
 
