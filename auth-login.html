@@ -27,29 +27,26 @@
     </div>
   </div>
 
-  <!-- Firebase compat libraries (explicit versioned URLs, must be reachable) -->
-  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-storage-compat.js"></script>
+  <!-- IMPORTANT: use compat urls that are known to exist -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
 
-  <!-- Your firebase-config (init) - must be in same folder as this file -->
+  <!-- initialize firebase (must come after SDKs above) -->
   <script src="firebase-config.js"></script>
 
-  <!-- Sign-in script -->
   <script>
     (function () {
-      // Defensive: abort if firebase didn't load
       if (!window.firebase) {
-        console.error('Firebase SDK not loaded. Check network/404s in DevTools -> Network.');
+        console.error('Firebase SDK not loaded. Check DevTools → Network for 404s.');
         document.getElementById('status').textContent = 'Error: Firebase SDK not loaded. Open DevTools → Network.';
         return;
       }
 
-      // get auth from global initialized file
       const auth = window.__firebase && window.__firebase.auth;
       if (!auth) {
-        console.error('Firebase auth is not available. Check firebase-config.js initialization.');
+        console.error('Firebase auth not available. Check firebase-config.js initialization.');
         document.getElementById('status').textContent = 'Error: Firebase not configured.';
         return;
       }
@@ -73,7 +70,6 @@
         auth.signInWithEmailAndPassword(email, password)
           .then(({ user }) => {
             console.log('✅ Logged in:', user && user.email);
-            // Redirect to profile page after successful login
             window.location.href = 'profile.html';
           })
           .catch(err => {
