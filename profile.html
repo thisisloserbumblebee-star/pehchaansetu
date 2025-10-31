@@ -4,602 +4,499 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pehchaan Setu — Profile</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    /* Small custom styles */
+    .tab { cursor:pointer; padding:8px 12px; border-radius:8px; border:1px solid #e6edf7; background:#fff; }
+    .tab.active { background:#2563eb; color:#fff; border-color:transparent; }
+    .card { background:#fff; border-radius:12px; padding:20px; box-shadow:0 6px 20px rgba(15,23,42,0.04); }
+    .small { font-size:13px; color:#6b7280; }
+    .danger { background:#ef4444; color:#fff; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans text-gray-800">
 
-  <!-- Firebase v8 compat SDKs (keep these; your firebase-config.js expects compat) -->
+  <div class="max-w-6xl mx-auto p-6">
+    <header class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-2xl font-bold text-blue-700">Pehchaan Setu — Profile</h1>
+        <p id="emailLine" class="small mt-1"></p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button id="editProfile" class="border rounded px-3 py-2">Edit profile</button>
+        <button id="signOut" class="bg-blue-600 text-white px-4 py-2 rounded">Sign out</button>
+      </div>
+    </header>
+
+    <main class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Left column: basic card & about -->
+      <section class="col-span-2 space-y-6">
+        <div class="card flex items-center gap-4">
+          <div style="width:80px;height:80px;border-radius:999px;background:#eef2f7;display:flex;align-items:center;justify-content:center;">
+            <img id="photo" src="" alt="" style="width:68px;height:68px;border-radius:999px;object-fit:cover;display:none;">
+            <div id="avatarPlaceholder" style="font-size:24px;color:#9aa7b9;">—</div>
+          </div>
+          <div>
+            <div id="displayName" class="text-xl font-semibold">—</div>
+            <div id="headline" class="small">—</div>
+            <div class="mt-2 small">UID: <span id="uidView" class="font-mono text-sm"></span></div>
+          </div>
+        </div>
+
+        <div id="aboutCard" class="card">
+          <h3 class="font-semibold mb-2">About</h3>
+          <p id="aboutText" class="small">—</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="card">
+          <div class="flex gap-3 mb-4" id="tabs">
+            <div class="tab active" data-tab="activity">Activity</div>
+            <div class="tab" data-tab="experience">Experience</div>
+            <div class="tab" data-tab="education">Education</div>
+            <div class="tab" data-tab="skills">Skills</div>
+            <div class="tab" data-tab="languages">Languages</div>
+          </div>
+
+          <!-- Tab content containers -->
+          <div id="tabContents">
+            <!-- ACTIVITY (empty placeholder) -->
+            <div class="tabContent" data-content="activity">
+              <p class="small mb-3">Recent activity will appear here (coming soon).</p>
+            </div>
+
+            <!-- EXPERIENCE -->
+            <div class="tabContent hidden" data-content="experience">
+              <h4 class="font-medium mb-2">Experience</h4>
+              <div id="experienceList" class="space-y-3 mb-4"></div>
+
+              <h5 class="font-medium mb-2">Add Experience</h5>
+              <div class="space-y-2">
+                <input id="expCompany" placeholder="Company" class="w-full p-2 border rounded" />
+                <input id="expTitle" placeholder="Title" class="w-full p-2 border rounded" />
+                <input id="expYears" placeholder="Years (e.g. 2019-2021)" class="w-full p-2 border rounded" />
+                <textarea id="expNotes" placeholder="Notes" class="w-full p-2 border rounded"></textarea>
+                <div class="flex justify-end">
+                  <button id="addExperience" class="bg-blue-600 text-white px-4 py-2 rounded">Add Experience</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- EDUCATION -->
+            <div class="tabContent hidden" data-content="education">
+              <h4 class="font-medium mb-2">Education</h4>
+              <div id="educationList" class="space-y-3 mb-4"></div>
+
+              <h5 class="font-medium mb-2">Add Education</h5>
+              <div class="space-y-2">
+                <input id="eduSchool" placeholder="School / College" class="w-full p-2 border rounded" />
+                <input id="eduDegree" placeholder="Degree" class="w-full p-2 border rounded" />
+                <input id="eduYear" placeholder="Year" class="w-full p-2 border rounded" />
+                <textarea id="eduDesc" placeholder="Notes" class="w-full p-2 border rounded"></textarea>
+                <div class="flex justify-end">
+                  <button id="addEducation" class="bg-blue-600 text-white px-4 py-2 rounded">Add Education</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- SKILLS -->
+            <div class="tabContent hidden" data-content="skills">
+              <h4 class="font-medium mb-2">Skills</h4>
+              <div id="skillsList" class="space-y-2 mb-4"></div>
+
+              <div class="flex gap-2">
+                <input id="skillInput" placeholder="Skill (e.g. React, Excel)" class="flex-1 p-2 border rounded" />
+                <button id="addSkill" class="bg-blue-600 text-white px-4 py-2 rounded">Add</button>
+              </div>
+            </div>
+
+            <!-- LANGUAGES -->
+            <div class="tabContent hidden" data-content="languages">
+              <h4 class="font-medium mb-2">Languages</h4>
+              <div id="languagesList" class="space-y-2 mb-4"></div>
+
+              <div class="flex gap-2">
+                <input id="langInput" placeholder="Language (e.g. Hindi — Fluent)" class="flex-1 p-2 border rounded" />
+                <button id="addLang" class="bg-blue-600 text-white px-4 py-2 rounded">Add</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right column: quick profile & debug -->
+      <aside class="space-y-4">
+        <div class="card">
+          <h4 class="font-semibold mb-2">Quick actions</h4>
+          <div class="space-y-2">
+            <button id="refreshBtn" class="w-full border rounded px-3 py-2">Refresh</button>
+            <button id="exportBtn" class="w-full border rounded px-3 py-2">Export profile JSON</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h4 class="font-semibold mb-2">Profile</h4>
+          <div class="small">UID: <span id="uidView2" class="font-mono"></span></div>
+          <div class="small mt-2">Signed in: <span id="signedInAt">—</span></div>
+        </div>
+
+        <div id="errorCard" class="card text-red-600 hidden"></div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Firebase compat v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-  <!-- Your firebase-config.js must initialize firebase (already in your repo) -->
+  <!-- your firebase-config.js (must initialize firebase) -->
   <script src="firebase-config.js"></script>
 
-  <style>
-    :root{--blue:#2563eb;--muted:#6b7280;--card:#fff}
-    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial; background:#f3f4f6; margin:0; color:#111}
-    .container{max-width:920px;margin:28px auto;padding:18px}
-    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
-    .brand{display:flex;align-items:center;gap:12px}
-    .avatar{width:92px;height:92px;border-radius:999px;background:#e6e7ea;display:flex;align-items:center;justify-content:center;font-size:40px;color:#9ca3af}
-    .btn{background:var(--blue);color:#fff;padding:10px 14px;border-radius:8px;border:0;cursor:pointer}
-    .btn-ghost{background:transparent;border:1px solid #e5e7eb;padding:8px 12px;border-radius:8px;cursor:pointer}
-    .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(15,23,42,.06)}
-    .grid{display:grid;grid-template-columns:1fr 340px;gap:18px}
-    .section-title{font-weight:700;font-size:18px;margin-bottom:10px;color:#0f172a}
-    nav.tabs{display:flex;gap:8px;margin:8px 0 18px}
-    nav.tabs button{padding:8px 12px;border-radius:8px;border:1px solid #e6e9ef;background:#fff;cursor:pointer}
-    nav.tabs button.active{background:var(--blue);color:#fff;border-color:var(--blue)}
-    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
-    input[type=text], textarea, select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9ef;margin-bottom:10px;box-sizing:border-box}
-    textarea{min-height:100px;resize:vertical}
-    ul.list{list-style:none;padding:0;margin:0}
-    ul.list li{padding:10px;border-radius:8px;border:1px solid #eef2f7;margin-bottom:8px;background:#fff;display:flex;justify-content:space-between;align-items:flex-start}
-    .meta{color:var(--muted);font-size:13px;margin-top:6px}
-    .small{font-size:13px;color:var(--muted)}
-    .section-actions{display:flex;gap:8px;align-items:center}
-    .danger{background:#ef4444;color:#fff;border:0;padding:6px 8px;border-radius:6px;cursor:pointer}
-    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#eef2ff;color:var(--blue);font-weight:600}
-    .note{color:#6b7280;font-size:13px;margin-top:8px}
-    .footer{margin-top:20px;color:var(--muted);font-size:13px}
-  </style>
-</head>
-<body>
+  <script>
+  (function(){
+    // Small helpers
+    const $ = id => document.getElementById(id);
+    const showError = (msg) => {
+      const el = $('errorCard');
+      el.classList.remove('hidden');
+      el.textContent = msg;
+      console.error('[profile] ' + msg);
+    };
+    const clearError = () => { const el = $('errorCard'); el.classList.add('hidden'); el.textContent = ''; };
 
-  <div class="container">
-    <header>
-      <div class="brand">
-        <div style="font-size:20px;font-weight:800;color:var(--blue)">Pehchaan Setu — Profile</div>
-        <div class="small" id="userEmail" style="margin-left:8px;color:var(--muted)"></div>
-      </div>
-      <div style="display:flex;gap:12px;align-items:center">
-        <button id="editToggle" class="btn-ghost">Edit profile</button>
-        <button id="signOutBtn" class="btn">Sign out</button>
-      </div>
-    </header>
-
-    <div class="grid">
-      <!-- left: main -->
-      <div>
-        <div class="card" id="profileCard" style="margin-bottom:18px">
-          <div style="display:flex;gap:16px;align-items:center">
-            <div id="avatar" class="avatar">—</div>
-            <div style="flex:1">
-              <div id="displayName" style="font-size:20px;font-weight:700">—</div>
-              <div id="displayEmail" class="meta">—</div>
-              <div class="note" id="profileStatus"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card" style="margin-bottom:18px">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div class="section-title">About</div>
-            <div class="section-actions">
-              <button id="saveAboutBtn" class="btn" style="display:none">Save</button>
-              <button id="cancelAboutBtn" class="btn-ghost" style="display:none">Cancel</button>
-            </div>
-          </div>
-
-          <div id="aboutView">
-            <p id="aboutText" class="small">—</p>
-          </div>
-
-          <div id="aboutEdit" style="display:none;margin-top:8px">
-            <label for="aboutInput">Write something about yourself</label>
-            <textarea id="aboutInput" placeholder="Tell people about yourself..."></textarea>
-            <div style="display:flex;gap:8px;justify-content:flex-end">
-              <button id="saveAbout" class="btn">Save About</button>
-              <button id="cancelAbout" class="btn-ghost">Cancel</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- tabs for other sections -->
-        <div class="card">
-          <nav class="tabs" id="tabs">
-            <button data-tab="activity" class="active">Activity</button>
-            <button data-tab="experience">Experience</button>
-            <button data-tab="education">Education</button>
-            <button data-tab="skills">Skills</button>
-            <button data-tab="languages">Languages</button>
-          </nav>
-
-          <div id="tabContent">
-            <!-- Activity -->
-            <div data-panel="activity">
-              <div style="display:flex;gap:8px;margin-bottom:12px">
-                <input id="activityInput" type="text" placeholder="Share an update..." />
-                <button id="postActivity" class="btn">Post</button>
-              </div>
-              <ul id="activityList" class="list"><!-- posts appear --></ul>
-            </div>
-
-            <!-- Experience -->
-            <div data-panel="experience" style="display:none">
-              <label for="expCompany">Company</label>
-              <input id="expCompany" type="text" placeholder="Company name" />
-              <label for="expRole">Role</label>
-              <input id="expRole" type="text" placeholder="Role / title" />
-              <label for="expFrom">From</label>
-              <input id="expFrom" type="text" placeholder="e.g. 2019" />
-              <label for="expTo">To</label>
-              <input id="expTo" type="text" placeholder="e.g. 2021 or Present" />
-              <label for="expDesc">Description</label>
-              <textarea id="expDesc" placeholder="Describe what you did..."></textarea>
-              <div style="display:flex;gap:8px;justify-content:flex-end">
-                <button id="addExperience" class="btn">Add Experience</button>
-              </div>
-
-              <hr style="margin:14px 0" />
-              <ul id="experienceList" class="list"></ul>
-            </div>
-
-            <!-- Education -->
-            <div data-panel="education" style="display:none">
-              <label for="eduSchool">School / College</label>
-              <input id="eduSchool" type="text" placeholder="Institution name" />
-              <label for="eduDegree">Degree</label>
-              <input id="eduDegree" type="text" placeholder="Degree or course" />
-              <label for="eduYear">Year</label>
-              <input id="eduYear" type="text" placeholder="e.g. 2018" />
-              <label for="eduDesc">Notes</label>
-              <textarea id="eduDesc" placeholder="Any notes..."></textarea>
-              <div style="display:flex;gap:8px;justify-content:flex-end">
-                <button id="addEducation" class="btn">Add Education</button>
-              </div>
-
-              <hr style="margin:14px 0" />
-              <ul id="educationList" class="list"></ul>
-            </div>
-
-            <!-- Skills -->
-            <div data-panel="skills" style="display:none">
-              <div style="display:flex;gap:8px;margin-bottom:12px">
-                <input id="skillInput" type="text" placeholder="Add a skill (e.g. JavaScript)" />
-                <button id="addSkill" class="btn">Add</button>
-              </div>
-              <ul id="skillsList" class="list"></ul>
-            </div>
-
-            <!-- Languages -->
-            <div data-panel="languages" style="display:none">
-              <div style="display:flex;gap:8px;margin-bottom:12px">
-                <input id="languageInput" type="text" placeholder="Add a language (e.g. Hindi)" />
-                <button id="addLanguage" class="btn">Add</button>
-              </div>
-              <ul id="languagesList" class="list"></ul>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- right column: profile summary / quick actions -->
-      <aside>
-        <div class="card" style="margin-bottom:16px">
-          <div class="section-title">Quick actions</div>
-          <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
-            <button id="goToEdit" class="btn">Edit profile</button>
-            <button id="goToLogin" class="btn-ghost">Back to dashboard</button>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="section-title">Profile info</div>
-          <div class="small">UID</div>
-          <div id="uidView" class="pill" style="margin-top:6px">—</div>
-          <div class="footer">Changes are saved to Firestore in <code>users/{uid}</code>.</div>
-        </div>
-      </aside>
-
-    </div>
-  </div>
-
-<script>
-(function(){
-  // Firestore field names used
-  const USER_DOC = 'users';
-
-  // Selectors
-  const avatarEl = document.getElementById('avatar');
-  const nameEl = document.getElementById('displayName');
-  const emailEl = document.getElementById('displayEmail');
-  const aboutText = document.getElementById('aboutText');
-  const aboutEdit = document.getElementById('aboutEdit');
-  const aboutView = document.getElementById('aboutView');
-  const aboutInput = document.getElementById('aboutInput');
-  const saveAbout = document.getElementById('saveAbout');
-  const cancelAbout = document.getElementById('cancelAbout');
-  const signOutBtn = document.getElementById('signOutBtn');
-  const editToggle = document.getElementById('editToggle');
-  const uidView = document.getElementById('uidView');
-  const userEmailHeader = document.getElementById('userEmail');
-
-  // tabs
-  const tabs = document.querySelectorAll('#tabs button');
-  const panels = Array.from(document.querySelectorAll('[data-panel]'));
-
-  // lists
-  const activityList = document.getElementById('activityList');
-  const experienceList = document.getElementById('experienceList');
-  const educationList = document.getElementById('educationList');
-  const skillsList = document.getElementById('skillsList');
-  const languagesList = document.getElementById('languagesList');
-
-  // inputs
-  const activityInput = document.getElementById('activityInput');
-  const postActivity = document.getElementById('postActivity');
-
-  const expCompany = document.getElementById('expCompany');
-  const expRole = document.getElementById('expRole');
-  const expFrom = document.getElementById('expFrom');
-  const expTo = document.getElementById('expTo');
-  const expDesc = document.getElementById('expDesc');
-  const addExperienceBtn = document.getElementById('addExperience');
-
-  const eduSchool = document.getElementById('eduSchool');
-  const eduDegree = document.getElementById('eduDegree');
-  const eduYear = document.getElementById('eduYear');
-  const eduDesc = document.getElementById('eduDesc');
-  const addEducationBtn = document.getElementById('addEducation');
-
-  const skillInput = document.getElementById('skillInput');
-  const addSkillBtn = document.getElementById('addSkill');
-
-  const languageInput = document.getElementById('languageInput');
-  const addLanguageBtn = document.getElementById('addLanguage');
-
-  // helper uid generator for list items
-  function genId(){ return 'id_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8); }
-
-  // Wait for firebase to be ready (v8 compat)
-  if (!window.firebase || !firebase.firestore) {
-    alert('Firebase not loaded. Make sure firebase-config.js and compat SDK are included.');
-    throw new Error('Firebase not loaded');
-  }
-
-  const auth = firebase.auth();
-  const db = firebase.firestore();
-
-  // Verify user signed in, if not, redirect to login
-  auth.onAuthStateChanged(user => {
-    if (!user) {
-      // redirect to login
-      window.location.href = './auth-login.html';
+    // Ensure firebase loaded
+    if (!window.firebase || !firebase.auth || !firebase.firestore) {
+      showError('Firebase not loaded. Make sure firebase-config.js and compat SDKs are included.');
       return;
     }
-    // now we have user -> setup doc listener
-    userEmailHeader.textContent = user.email || '';
-    uidView.textContent = user.uid;
-    startUserListener(user.uid);
-  });
 
-  let unsub = null;
-  let currentDoc = null; // local snapshot
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const USERS = 'users';
 
-  function startUserListener(uid){
-    const docRef = db.collection(USER_DOC).doc(uid);
-    // create doc if missing with basic fields
-    docRef.get().then(snap => {
-      if (!snap.exists) {
-        docRef.set({
-          fullName: '',
-          email: auth.currentUser.email || '',
-          bio: '',
-          activity: [],
-          experience: [],
-          education: [],
-          skills: [],
-          languages: [],
-          profilePublic: true,
-          status: 'active',
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true }).catch(console.error);
-      }
-    }).catch(console.error);
+    // UI refs
+    const emailLine = $('emailLine');
+    const displayName = $('displayName');
+    const headline = $('headline');
+    const aboutText = $('aboutText');
+    const photoEl = $('photo');
+    const avatarPlaceholder = $('avatarPlaceholder');
+    const uidView = $('uidView');
+    const uidView2 = $('uidView2');
+    const signedInAt = $('signedInAt');
 
-    // Subscribe for realtime updates
-    if (unsub) unsub();
-    unsub = docRef.onSnapshot(docSnap => {
-      if (!docSnap.exists) return;
-      currentDoc = docSnap.data();
-      renderProfile(currentDoc);
-    }, err => {
-      console.error('profile onSnapshot error', err);
-    });
-  }
-
-  // Render UI from Firestore doc
-  function renderProfile(doc){
-    nameEl.textContent = doc.fullName || '—';
-    emailEl.textContent = doc.email || auth.currentUser.email || '—';
-    aboutText.textContent = doc.bio || '—';
-    aboutInput.value = doc.bio || '';
-
-    avatarEl.textContent = doc.fullName ? (doc.fullName.split(' ').map(s=>s[0]).slice(0,2).join('')) : '—';
-    uidView.textContent = (auth.currentUser && auth.currentUser.uid) || '—';
-    userEmailHeader.textContent = (auth.currentUser && auth.currentUser.email) || '';
-
-    // Activity
-    renderList(activityList, doc.activity || [], renderActivityItem);
-
-    // Experience
-    renderList(experienceList, doc.experience || [], renderExperienceItem);
-
-    // Education
-    renderList(educationList, doc.education || [], renderEducationItem);
-
-    // Skills
-    renderList(skillsList, doc.skills || [], renderSkillItem);
-
-    // Languages
-    renderList(languagesList, doc.languages || [], renderLanguageItem);
-  }
-
-  // generic list renderer
-  function renderList(container, items, renderFn){
-    container.innerHTML = '';
-    if (!items || items.length === 0) {
-      const el = document.createElement('div');
-      el.className = 'small';
-      el.style.padding = '8px 0';
-      el.textContent = '—';
-      container.appendChild(el);
-      return;
-    }
-    items.slice().reverse().forEach(item => {
-      const li = document.createElement('li');
-      li.innerHTML = '';
-      renderFn(li, item);
-      container.appendChild(li);
-    });
-  }
-
-  // Renderers for each item
-  function renderActivityItem(li, item){
-    const left = document.createElement('div');
-    left.style.flex = '1';
-    const text = document.createElement('div');
-    text.textContent = item.text || '';
-    const meta = document.createElement('div');
-    meta.className = 'meta';
-    meta.textContent = (new Date(item.createdAt && item.createdAt.seconds ? item.createdAt.seconds*1000 : item.createdAt || Date.now())).toLocaleString();
-    left.appendChild(text); left.appendChild(meta);
-
-    const right = document.createElement('div');
-    const del = document.createElement('button');
-    del.className = 'danger';
-    del.textContent = 'Delete';
-    del.addEventListener('click', ()=> removeItem('activity', item.id));
-    right.appendChild(del);
-
-    li.appendChild(left); li.appendChild(right);
-  }
-
-  function renderExperienceItem(li, item){
-    const left = document.createElement('div');
-    left.style.flex = '1';
-    const title = document.createElement('div');
-    title.style.fontWeight = '700';
-    title.textContent = (item.role || '—') + ' @ ' + (item.company || '—');
-    const meta = document.createElement('div');
-    meta.className = 'meta';
-    meta.textContent = (item.from || '') + ' — ' + (item.to || '');
-    const desc = document.createElement('div');
-    desc.className = 'small';
-    desc.textContent = item.description || '';
-    left.appendChild(title); left.appendChild(meta); left.appendChild(desc);
-
-    const right = document.createElement('div');
-    const del = document.createElement('button');
-    del.className = 'danger';
-    del.textContent = 'Delete';
-    del.addEventListener('click', ()=> removeItemById('experience', item.id));
-    right.appendChild(del);
-
-    li.appendChild(left); li.appendChild(right);
-  }
-
-  function renderEducationItem(li, item){
-    const left = document.createElement('div');
-    left.style.flex = '1';
-    const title = document.createElement('div');
-    title.style.fontWeight = '700';
-    title.textContent = item.school || '—';
-    const meta = document.createElement('div');
-    meta.className = 'meta';
-    meta.textContent = (item.degree || '') + ' • ' + (item.year || '');
-    const desc = document.createElement('div');
-    desc.className = 'small';
-    desc.textContent = item.notes || '';
-    left.appendChild(title); left.appendChild(meta); left.appendChild(desc);
-
-    const right = document.createElement('div');
-    const del = document.createElement('button');
-    del.className = 'danger';
-    del.textContent = 'Delete';
-    del.addEventListener('click', ()=> removeItemById('education', item.id));
-    right.appendChild(del);
-
-    li.appendChild(left); li.appendChild(right);
-  }
-
-  function renderSkillItem(li, item){
-    const left = document.createElement('div'); left.textContent = item;
-    const right = document.createElement('div');
-    const del = document.createElement('button'); del.className='danger'; del.textContent='Delete';
-    del.addEventListener('click', ()=> removePrimitive('skills', item));
-    right.appendChild(del);
-    li.appendChild(left); li.appendChild(right);
-  }
-
-  function renderLanguageItem(li, item){
-    const left = document.createElement('div'); left.textContent = item;
-    const right = document.createElement('div');
-    const del = document.createElement('button'); del.className='danger'; del.textContent='Delete';
-    del.addEventListener('click', ()=> removePrimitive('languages', item));
-    right.appendChild(del);
-    li.appendChild(left); li.appendChild(right);
-  }
-
-  // helpers to update Firestore
-  function setUserField(uid, patch){
-    return db.collection(USER_DOC).doc(uid).set(patch, { merge: true });
-  }
-
-  function replaceArray(uid, fieldName, newArray){
-    const patch = {}; patch[fieldName] = newArray;
-    return db.collection(USER_DOC).doc(uid).set(patch, { merge: true });
-  }
-
-  function removePrimitive(fieldName, value){
-    const uid = auth.currentUser.uid;
-    const docRef = db.collection(USER_DOC).doc(uid);
-    docRef.get().then(snap => {
-      const data = snap.data() || {};
-      const arr = data[fieldName] || [];
-      const filtered = arr.filter(x => x !== value);
-      return replaceArray(uid, fieldName, filtered);
-    }).catch(console.error);
-  }
-
-  function removeItemById(fieldName, id){
-    const uid = auth.currentUser.uid;
-    const docRef = db.collection(USER_DOC).doc(uid);
-    docRef.get().then(snap => {
-      const data = snap.data() || {};
-      const arr = data[fieldName] || [];
-      const filtered = arr.filter(x => x.id !== id);
-      return replaceArray(uid, fieldName, filtered);
-    }).catch(console.error);
-  }
-
-  function removeItem(fieldName, itemObj){
-    // for objects: remove by id
-    if (itemObj && itemObj.id) return removeItemById(fieldName, itemObj.id);
-    // fallback: remove exact object equality
-    const uid = auth.currentUser.uid;
-    const docRef = db.collection(USER_DOC).doc(uid);
-    docRef.get().then(snap => {
-      const data = snap.data() || {};
-      const arr = data[fieldName] || [];
-      const filtered = arr.filter(x => JSON.stringify(x) !== JSON.stringify(itemObj));
-      return replaceArray(uid, fieldName, filtered);
-    }).catch(console.error);
-  }
-
-  // Adders
-  postActivity.addEventListener('click', ()=> {
-    const text = activityInput.value && activityInput.value.trim();
-    if (!text) return;
-    const uid = auth.currentUser.uid;
-    const docRef = db.collection(USER_DOC).doc(uid);
-    docRef.get().then(snap => {
-      const data = snap.data() || {};
-      const a = data.activity || [];
-      a.push({ id: genId(), text, createdAt: Date.now() });
-      return replaceArray(uid, 'activity', a);
-    }).then(()=> activityInput.value = '').catch(console.error);
-  });
-
-  addExperienceBtn.addEventListener('click', ()=>{
-    const company = expCompany.value.trim();
-    const role = expRole.value.trim();
-    if (!company || !role) return alert('Company and Role required');
-    const obj = { id: genId(), company, role, from: expFrom.value.trim(), to: expTo.value.trim(), description: expDesc.value.trim() };
-    const uid = auth.currentUser.uid;
-    const docRef = db.collection(USER_DOC).doc(uid);
-    docRef.get().then(snap => {
-      const data = snap.data() || {};
-      const arr = data.experience || [];
-      arr.push(obj);
-      return replaceArray(uid, 'experience', arr);
-    }).then(()=>{
-      expCompany.value=''; expRole.value=''; expFrom.value=''; expTo.value=''; expDesc.value='';
-    }).catch(console.error);
-  });
-
-  addEducationBtn.addEventListener('click', ()=>{
-    const school = eduSchool.value.trim();
-    if (!school) return alert('School is required');
-    const obj = { id: genId(), school, degree: eduDegree.value.trim(), year: eduYear.value.trim(), notes: eduDesc.value.trim() };
-    const uid = auth.currentUser.uid;
-    const docRef = db.collection(USER_DOC).doc(uid);
-    docRef.get().then(snap => {
-      const data = snap.data() || {};
-      const arr = data.education || [];
-      arr.push(obj);
-      return replaceArray(uid, 'education', arr);
-    }).then(()=>{
-      eduSchool.value=''; eduDegree.value=''; eduYear.value=''; eduDesc.value='';
-    }).catch(console.error);
-  });
-
-  addSkillBtn.addEventListener('click', ()=>{
-    const v = skillInput.value && skillInput.value.trim();
-    if (!v) return;
-    const uid = auth.currentUser.uid;
-    const docRef = db.collection(USER_DOC).doc(uid);
-    docRef.get().then(snap=>{
-      const data = snap.data() || {};
-      const arr = data.skills || [];
-      // avoid duplicates
-      if (arr.indexOf(v) === -1) arr.push(v);
-      return replaceArray(uid, 'skills', arr);
-    }).then(()=> skillInput.value='').catch(console.error);
-  });
-
-  addLanguageBtn.addEventListener('click', ()=>{
-    const v = languageInput.value && languageInput.value.trim();
-    if (!v) return;
-    const uid = auth.currentUser.uid;
-    const docRef = db.collection(USER_DOC).doc(uid);
-    docRef.get().then(snap=>{
-      const data = snap.data() || {};
-      const arr = data.languages || [];
-      if (arr.indexOf(v) === -1) arr.push(v);
-      return replaceArray(uid, 'languages', arr);
-    }).then(()=> languageInput.value='').catch(console.error);
-  });
-
-  // About editing
-  document.getElementById('editToggle').addEventListener('click', ()=> {
-    aboutView.style.display = 'none'; aboutEdit.style.display = 'block';
-    document.getElementById('saveAbout').style.display='inline-block';
-    document.getElementById('saveAbout').focus();
-  });
-  document.getElementById('cancelAbout').addEventListener('click', ()=> {
-    aboutEdit.style.display = 'none'; aboutView.style.display = 'block';
-    aboutInput.value = aboutText.textContent;
-  });
-  saveAbout.addEventListener('click', ()=>{
-    const uid = auth.currentUser.uid;
-    const value = aboutInput.value.trim();
-    setUserField(uid, { bio: value }).then(()=> {
-      aboutEdit.style.display='none'; aboutView.style.display='block';
-    }).catch(err => alert('Save failed: ' + err.message));
-  });
-
-  // Sign out
-  signOutBtn.addEventListener('click', ()=>{
-    auth.signOut().then(()=> {
-      window.location.href = './auth-login.html';
-    }).catch(err => alert('Sign out failed: ' + err.message));
-  });
-
-  // tabs navigation
-  tabs.forEach(t => {
-    t.addEventListener('click', () => {
-      tabs.forEach(x=>x.classList.remove('active'));
-      t.classList.add('active');
-      const tab = t.getAttribute('data-tab');
-      panels.forEach(p => {
-        p.style.display = p.getAttribute('data-panel') === tab ? '' : 'none';
+    // Tabs
+    document.querySelectorAll('#tabs .tab').forEach(t => {
+      t.addEventListener('click', () => {
+        document.querySelectorAll('#tabs .tab').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        const tab = t.getAttribute('data-tab');
+        document.querySelectorAll('.tabContent').forEach(c => {
+          c.classList.toggle('hidden', c.getAttribute('data-content') !== tab);
+        });
       });
     });
-  });
 
-})(); // end IIFE
-</script>
+    // protect page: redirect to login if not signed in
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        // not signed in
+        console.log('[profile] user not signed in, redirecting to login');
+        window.location.href = 'auth-login.html';
+        return;
+      }
+      // logged in -> initialize UI
+      initForUser(user);
+    });
 
+    // Sign out
+    $('signOut').addEventListener('click', () => {
+      auth.signOut().then(()=> location.href='auth-login.html');
+    });
+
+    // Refresh / Export
+    $('refreshBtn').addEventListener('click', () => {
+      if (auth.currentUser) loadUserDoc(auth.currentUser.uid);
+    });
+    $('exportBtn').addEventListener('click', async () => {
+      if (!auth.currentUser) return showError('Not signed in');
+      const snap = await db.collection(USERS).doc(auth.currentUser.uid).get();
+      const data = (snap.exists && snap.data()) || {};
+      const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'profile-'+auth.currentUser.uid+'.json'; a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Initialize for a logged-in user
+    function initForUser(user) {
+      clearError();
+      console.log('[profile] signed in as', user.uid, user.email);
+      emailLine.textContent = user.email || '';
+      uidView.textContent = user.uid;
+      uidView2.textContent = user.uid;
+      signedInAt.textContent = (new Date()).toLocaleString();
+
+      // show display name / avatar
+      displayName.textContent = user.displayName || '—';
+      if (user.photoURL) {
+        photoEl.src = user.photoURL; photoEl.style.display = 'block'; avatarPlaceholder.style.display='none';
+      } else {
+        photoEl.style.display = 'none'; avatarPlaceholder.style.display='block';
+      }
+
+      // load and listen to user's doc
+      const docRef = db.collection(USERS).doc(user.uid);
+      docRef.onSnapshot(snap => {
+        const data = (snap.exists && snap.data()) || {};
+        renderProfileData(data);
+      }, err => {
+        showError('Failed to listen to profile: ' + (err && err.message));
+      });
+
+      // Hook add handlers
+      attachAddHandlers(user);
+    }
+
+    function renderProfileData(data) {
+      // about
+      aboutText.textContent = data.about || '—';
+
+      // experience
+      renderArrayList('experienceList', data.experience || [], ['company','title','years','notes']);
+
+      // education
+      renderArrayList('educationList', data.education || [], ['school','degree','year','notes']);
+
+      // skills
+      renderSimpleList('skillsList', data.skills || []);
+
+      // languages
+      renderSimpleList('languagesList', data.languages || []);
+    }
+
+    function renderArrayList(containerId, arr, fields) {
+      const el = $(containerId);
+      if (!el) return;
+      el.innerHTML = '';
+      if (!arr.length) {
+        const p = document.createElement('div'); p.className='small'; p.textContent='—'; el.appendChild(p); return;
+      }
+      arr.slice().reverse().forEach(item => {
+        const card = document.createElement('div'); card.className='p-3 border rounded';
+        const title = document.createElement('div'); title.className='font-semibold';
+        title.textContent = item[fields[0]] || item.school || '—';
+        card.appendChild(title);
+
+        const meta = document.createElement('div'); meta.className='small text-gray-600';
+        meta.textContent = (item[fields[1]] || '') + (item[fields[2]] ? ' • ' + item[fields[2]] : '');
+        card.appendChild(meta);
+
+        if (item[fields[3]]) {
+          const notes = document.createElement('div'); notes.className='mt-2 small';
+          notes.textContent = item[fields[3]];
+          card.appendChild(notes);
+        }
+
+        // delete button
+        const del = document.createElement('button'); del.className='danger mt-3';
+        del.textContent = 'Delete';
+        del.addEventListener('click', () => removeArrayItem(item.id, containerId.replace('List','')));
+        card.appendChild(del);
+
+        el.appendChild(card);
+      });
+    }
+
+    function renderSimpleList(containerId, arr) {
+      const el = $(containerId);
+      if (!el) return;
+      el.innerHTML = '';
+      if (!arr.length) { el.innerHTML = '<div class="small">—</div>'; return; }
+      arr.slice().reverse().forEach((val) => {
+        const row = document.createElement('div'); row.className='p-2 border rounded flex justify-between items-center';
+        const left = document.createElement('div'); left.textContent = val;
+        const btn = document.createElement('button'); btn.className='danger'; btn.textContent='Delete';
+        btn.addEventListener('click', () => removeSimpleItem(val, containerId.replace('List','')));
+        row.appendChild(left); row.appendChild(btn); el.appendChild(row);
+      });
+    }
+
+    // ---------- add handlers for each section ----------
+    function attachAddHandlers(user) {
+      // Education
+      $('addEducation').addEventListener('click', async () => {
+        clearError();
+        const school = $('eduSchool').value.trim();
+        if (!school) return showError('School required');
+        const entry = {
+          id: 'edu_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8),
+          school,
+          degree: $('eduDegree').value.trim() || '',
+          year: $('eduYear').value.trim() || '',
+          notes: $('eduDesc').value.trim() || '',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await pushArrayItem(user.uid, 'education', entry);
+        $('eduSchool').value=''; $('eduDegree').value=''; $('eduYear').value=''; $('eduDesc').value='';
+      });
+
+      // Experience
+      $('addExperience').addEventListener('click', async () => {
+        clearError();
+        const company = $('expCompany').value.trim();
+        if (!company) return showError('Company required');
+        const entry = {
+          id: 'exp_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8),
+          company,
+          title: $('expTitle').value.trim()||'',
+          years: $('expYears').value.trim()||'',
+          notes: $('expNotes').value.trim()||'',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await pushArrayItem(user.uid, 'experience', entry);
+        $('expCompany').value=''; $('expTitle').value=''; $('expYears').value=''; $('expNotes').value='';
+      });
+
+      // Skills
+      $('addSkill').addEventListener('click', async () => {
+        clearError();
+        const v = $('skillInput').value.trim();
+        if (!v) return showError('Skill required');
+        await pushSimpleItem(user.uid, 'skills', v);
+        $('skillInput').value='';
+      });
+
+      // Languages
+      $('addLang').addEventListener('click', async () => {
+        clearError();
+        const v = $('langInput').value.trim();
+        if (!v) return showError('Language required');
+        await pushSimpleItem(user.uid, 'languages', v);
+        $('langInput').value='';
+      });
+    }
+
+    // ---------- helpers to push array items atomically ----------
+    async function pushArrayItem(uid, field, item) {
+      try {
+        const docRef = db.collection(USERS).doc(uid);
+        await db.runTransaction(async tx => {
+          const snap = await tx.get(docRef);
+          const current = (snap.exists && snap.data()[field]) || [];
+          const newArr = Array.isArray(current) ? current.slice() : [];
+          newArr.push(item);
+          tx.set(docRef, { [field]: newArr }, { merge: true });
+        });
+        console.log('[profile] pushed item to', field);
+      } catch (err) {
+        showError('Save failed: ' + (err && err.message));
+      }
+    }
+
+    async function pushSimpleItem(uid, field, value) {
+      try {
+        const docRef = db.collection(USERS).doc(uid);
+        await db.runTransaction(async tx => {
+          const snap = await tx.get(docRef);
+          const current = (snap.exists && snap.data()[field]) || [];
+          const arr = Array.isArray(current) ? current.slice() : [];
+          arr.push(value);
+          tx.set(docRef, { [field]: arr }, { merge: true });
+        });
+        console.log('[profile] pushed simple item to', field);
+      } catch (err) {
+        showError('Save failed: ' + (err && err.message));
+      }
+    }
+
+    // remove array item by id
+    async function removeArrayItem(itemId, field) {
+      if (!auth.currentUser) return showError('Not signed in');
+      try {
+        const docRef = db.collection(USERS).doc(auth.currentUser.uid);
+        await db.runTransaction(async tx => {
+          const snap = await tx.get(docRef);
+          const data = snap.exists ? snap.data() : {};
+          const arr = Array.isArray(data[field]) ? data[field].filter(x => x.id !== itemId) : [];
+          tx.set(docRef, { [field]: arr }, { merge: true });
+        });
+      } catch (err) {
+        showError('Delete failed: ' + (err && err.message));
+      }
+    }
+
+    // remove simple value
+    async function removeSimpleItem(value, field) {
+      if (!auth.currentUser) return showError('Not signed in');
+      try {
+        const docRef = db.collection(USERS).doc(auth.currentUser.uid);
+        await db.runTransaction(async tx => {
+          const snap = await tx.get(docRef);
+          const data = snap.exists ? snap.data() : {};
+          const arr = Array.isArray(data[field]) ? data[field].filter(x => x !== value) : [];
+          tx.set(docRef, { [field]: arr }, { merge: true });
+        });
+      } catch (err) {
+        showError('Delete failed: ' + (err && err.message));
+      }
+    }
+
+    // Load user doc initially (optional)
+    async function loadUserDoc(uid) {
+      try {
+        const snap = await db.collection(USERS).doc(uid).get();
+        const data = (snap.exists && snap.data()) || {};
+        renderProfileData(data);
+      } catch (err) {
+        showError('Failed to load profile: ' + (err && err.message));
+      }
+    }
+
+    // Render helpers (for initial manual render)
+    function renderProfileData(data) {
+      $('aboutText').textContent = data.about || '—';
+      renderArrayList('educationList', data.education || [], ['school','degree','year','notes']);
+      renderArrayList('experienceList', data.experience || [], ['company','title','years','notes']);
+      renderSimpleList('skillsList', data.skills || []);
+      renderSimpleList('languagesList', data.languages || []);
+    }
+    // (renderArrayList/renderSimpleList same as above; but we already use onSnapshot to update live)
+    function renderArrayList(containerId, arr, fields) {
+      const el = $(containerId); if (!el) return;
+      el.innerHTML = '';
+      if (!arr.length) { el.innerHTML = '<div class="small">—</div>'; return; }
+      arr.slice().reverse().forEach(item => {
+        const card = document.createElement('div'); card.className='p-3 border rounded';
+        const title = document.createElement('div'); title.className='font-semibold'; title.textContent = item[fields[0]] || '—';
+        card.appendChild(title);
+        const meta = document.createElement('div'); meta.className='small text-gray-600'; meta.textContent = (item[fields[1]]||'') + (item[fields[2]] ? ' • ' + item[fields[2]] : '');
+        card.appendChild(meta);
+        if (item[fields[3]]) { const notes = document.createElement('div'); notes.className='mt-2 small'; notes.textContent = item[fields[3]]; card.appendChild(notes); }
+        const del = document.createElement('button'); del.className='danger mt-3'; del.textContent='Delete';
+        del.addEventListener('click', () => removeArrayItem(item.id, containerId.replace('List','')));
+        card.appendChild(del);
+        el.appendChild(card);
+      });
+    }
+    function renderSimpleList(containerId, arr) {
+      const el = $(containerId); if (!el) return;
+      el.innerHTML = '';
+      if (!arr.length) { el.innerHTML = '<div class="small">—</div>'; return; }
+      arr.slice().reverse().forEach(val => {
+        const row = document.createElement('div'); row.className='p-2 border rounded flex justify-between items-center';
+        const left = document.createElement('div'); left.textContent = val;
+        const btn = document.createElement('button'); btn.className='danger'; btn.textContent='Delete';
+        btn.addEventListener('click', () => removeSimpleItem(val, containerId.replace('List','')));
+        row.appendChild(left); row.appendChild(btn); el.appendChild(row);
+      });
+    }
+
+    // done
+    console.log('[profile] script loaded');
+  })();
+  </script>
 </body>
 </html>
