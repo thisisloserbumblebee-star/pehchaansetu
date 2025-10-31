@@ -1,235 +1,396 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Pehchaan Setu — Home</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --accent: #0052cc;
-    --text-dark: #1a1a1a;
-    --text-light: #6b7280;
-    --bg: #f8fafc;
-    --radius: 12px;
-  }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pehchaan Setu — Home</title>
 
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-family: 'Inter', sans-serif;
-  }
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
-  body {
-    background: var(--bg);
-    color: var(--text-dark);
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-  }
+  <!-- Firebase compat (optional; expected to exist in your stack) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 18px 24px;
-    background: white;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  }
+  <!-- your firebase-config.js must be in same folder and call firebase.initializeApp(...) -->
+  <script src="firebase-config.js"></script>
 
-  .logo-section {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
+  <style>
+    :root{
+      --accent:#1e56f0;
+      --muted:#6b7280;
+      --bg:#f6f9fb;
+      --card:#ffffff;
+      --radius:12px;
+      --shadow:0 10px 30px rgba(16,24,40,.06);
+      --max-width:980px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+      background:var(--bg);
+      -webkit-font-smoothing:antialiased;
+      color:#0f172a;
+    }
 
-  .logo-section img {
-    width: 80px;
-    height: 80px;
-    border-radius: 8px;
-  }
+    /* container */
+    .container { max-width:var(--max-width); margin:0 auto; padding:20px; }
 
-  .logo-section h1 {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--accent);
-  }
+    /* top nav */
+    .nav {
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:14px 0;
+    }
+    .brand { display:flex; align-items:center; gap:12px; }
+    .brand img { width:64px; height:64px; object-fit:contain; border-radius:10px; }
+    .brand .title { font-weight:700; color:var(--accent); font-size:20px; }
 
-  .actions {
-    display: flex;
-    gap: 12px;
-  }
+    .nav-actions { display:flex; gap:10px; align-items:center; }
+    .nav-actions a, .btn {
+      padding:8px 12px; border-radius:8px; text-decoration:none; font-weight:600;
+      color:var(--accent); border:1px solid rgba(30,86,240,0.12); background:transparent;
+    }
+    .btn-primary { background:var(--accent); color:#fff; border:none; }
 
-  .btn {
-    padding: 10px 18px;
-    border-radius: var(--radius);
-    border: 1px solid transparent;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.25s;
-  }
+    /* layout */
+    .layout { display:grid; grid-template-columns:1fr 320px; gap:20px; align-items:start; }
+    @media (max-width:980px){ .layout { grid-template-columns:1fr; } }
 
-  .btn.primary {
-    background: var(--accent);
-    color: #fff;
-  }
+    /* left column feed */
+    .feedColumn { display:flex; flex-direction:column; gap:20px; }
 
-  .btn.primary:hover { opacity: 0.9; }
+    .card {
+      background:var(--card); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow);
+    }
 
-  .btn.secondary {
-    background: transparent;
-    border: 1px solid var(--accent);
-    color: var(--accent);
-  }
+    .composer {
+      display:flex; gap:12px; align-items:center;
+    }
+    .composer img{ width:48px; height:48px; border-radius:50%; object-fit:cover; }
+    .composer input {
+      flex:1; padding:12px 14px; border-radius:10px; border:1px solid #eef2f7; font-size:15px;
+      background:#fbfeff;
+    }
+    .postBtn { padding:8px 12px; border-radius:10px; background:var(--accent); color:white; border:none; }
 
-  .hero {
-    text-align: center;
-    padding: 70px 24px 60px;
-  }
+    /* post */
+    .post { display:block; margin-top:8px; }
+    .post .head { display:flex; gap:12px; align-items:center; }
+    .post .head img { width:44px; height:44px; border-radius:50%; object-fit:cover; }
+    .post .meta { font-weight:600; }
+    .post .time { color:var(--muted); font-size:13px; }
+    .post .body { margin-top:10px; color:#111827; line-height:1.5; }
+    .post img.content { width:100%; margin-top:12px; border-radius:8px; max-height:420px; object-fit:cover; }
 
-  .hero img {
-    width: 180px;
-    height: 180px;
-    margin-bottom: 24px;
-  }
+    /* right column */
+    .sideColumn { display:flex; flex-direction:column; gap:16px; position:relative; }
 
-  .hero h2 {
-    font-size: 36px;
-    font-weight: 700;
-    margin-bottom: 12px;
-    color: var(--text-dark);
-  }
+    .widget .title { font-weight:700; color:#0f172a; margin-bottom:10px; }
 
-  .hero p {
-    font-size: 16px;
-    color: var(--text-light);
-    max-width: 520px;
-    margin: 0 auto 24px;
-    line-height: 1.6;
-  }
+    .trending li { padding:10px 0; border-bottom:1px solid #f1f5f9; color:var(--muted); font-size:14px; }
 
-  .hero .cta {
-    display: flex;
-    justify-content: center;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
+    /* floating compose on mobile */
+    .fab {
+      position:fixed; right:20px; bottom:22px; z-index:60;
+      background:var(--accent); color:#fff; border:none; padding:14px 16px; border-radius:999px;
+      box-shadow:0 10px 24px rgba(16,24,40,.12); font-weight:700;
+    }
 
-  section.info {
-    text-align: center;
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 60px 20px;
-  }
+    /* small helpers */
+    .muted { color:var(--muted); font-size:14px; }
+    .small { font-size:13px; color:var(--muted); }
 
-  section.info h3 {
-    font-size: 24px;
-    color: var(--accent);
-    font-weight: 700;
-    margin-bottom: 12px;
-  }
-
-  section.info p {
-    color: var(--text-light);
-    font-size: 16px;
-    line-height: 1.7;
-  }
-
-  section.info em {
-    font-style: italic;
-    color: var(--accent);
-    font-weight: 600;
-  }
-
-  .footer {
-    margin-top: auto;
-    padding: 24px 16px;
-    text-align: center;
-    font-size: 13px;
-    color: var(--text-light);
-    background: #ffffff;
-    border-top: 1px solid #eaeaea;
-  }
-
-  .footer strong {
-    color: var(--accent);
-  }
-
-  .footer .love {
-    color: red;
-  }
-
-  .footer .tricolor {
-    position: relative;
-    display: inline-block;
-    margin-top: 6px;
-  }
-
-  .footer .tricolor::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    bottom: -3px;
-    width: 100%;
-    height: 3px;
-    background: linear-gradient(to right, #FF9933, #FFFFFF, #138808);
-    background-size: 200% 100%;
-    animation: tricolorMove 4s linear infinite;
-    border-radius: 2px;
-  }
-
-  @keyframes tricolorMove {
-    0% { background-position: 0% 0%; }
-    100% { background-position: 200% 0%; }
-  }
-
-  @media (max-width: 600px) {
-    .logo-section img { width: 64px; height: 64px; }
-    .hero img { width: 140px; height: 140px; }
-    .hero h2 { font-size: 28px; }
-    .hero p { font-size: 15px; }
-    section.info h3 { font-size: 20px; }
-  }
-</style>
+    .hidden { display:none !important; }
+  </style>
 </head>
 <body>
+  <div class="container">
 
-  <header>
-    <div class="logo-section">
-      <img src="Logo.png" alt="Pehchaan Setu Logo">
-      <h1>Pehchaan Setu</h1>
-    </div>
-    <div class="actions">
-      <button class="btn secondary" onclick="location.href='auth-login.html'">Sign In</button>
-      <button class="btn primary" onclick="location.href='auth-signup.html'">Join Now</button>
-    </div>
-  </header>
+    <!-- NAV -->
+    <header class="nav" role="banner">
+      <div class="brand">
+        <img src="Logo.png" alt="Pehchaan Setu logo" id="navLogo">
+        <div>
+          <div class="title">Pehchaan Setu</div>
+          <div class="small muted">Creators • Builders • Professionals</div>
+        </div>
+      </div>
 
-  <section class="hero">
-    <img src="Logo.png" alt="Pehchaan Setu Logo">
-    <h2>Empowering Professionals.<br>Building Connections.</h2>
-    <p>Join India’s growing professional community to showcase your work, network with peers, and grow your career.</p>
-    <div class="cta">
-      <button class="btn primary" onclick="location.href='auth-signup.html'">Get Started</button>
-      <button class="btn secondary" onclick="location.href='auth-login.html'">Sign In</button>
-    </div>
-  </section>
+      <nav class="nav-actions" aria-label="Main navigation">
+        <a href="index.html" id="nav-home">Home</a>
+        <a href="network.html" id="nav-network">My network</a>
+        <a href="post.html" id="nav-post">Post</a>
+        <a href="notifications.html" id="nav-notif">Notifications</a>
+        <a href="jobs.html" id="nav-jobs">Jobs</a>
+        <a href="profile.html" id="nav-profile">Profile</a>
 
-  <section class="info">
-    <h3>Who We Are</h3>
-    <p>Pehchaan Setu is an Indian professional platform built for creators, innovators, and dreamers. We believe every individual deserves a space to showcase their talent, connect with peers, and build meaningful professional relationships — without boundaries.</p>
-  </section>
+        <span id="signedOutControls">
+          <a href="auth-login.html">Sign in</a>
+          <a class="btn btn-primary" href="auth-signup.html">Join</a>
+        </span>
 
-  <section class="info">
-    <h3>Our Purpose</h3>
-    <p>To make India self-reliant in the digital professional ecosystem. Our mission is to empower Indians with a platform that reflects our values — built in India, for India.<br><em>“Banaaye Apni Pehchaan, Jode Naya Setu.”</em></p>
-  </section>
+        <span id="signedInControls" class="hidden">
+          <span id="welcomeUser" class="muted">Hi, user</span>
+          <a id="signoutBtn" class="btn" href="#" role="button">Sign out</a>
+        </span>
+      </nav>
+    </header>
 
-  <div class="footer">
-    © 2025 <strong>Pehchaan Setu</strong> · Built for professionals, by professionals.<br>
-    <span class="tricolor">Made with <span class="love">❤️</span> in India 🇮🇳</span>
+    <!-- GRID -->
+    <main class="layout" role="main">
+
+      <!-- left: feed -->
+      <section class="feedColumn">
+
+        <!-- Composer card -->
+        <div class="card composer" id="composerCard" role="region" aria-label="Create a post">
+          <img id="meAvatar" src="" alt="You">
+          <input id="composerInput" placeholder="Share something with your network..." aria-label="Write a post">
+          <button id="openComposer" class="postBtn">Post</button>
+        </div>
+
+        <!-- Feed container -->
+        <div id="feedContainer"></div>
+
+      </section>
+
+      <!-- right: widgets -->
+      <aside class="sideColumn">
+
+        <div class="card widget">
+          <div class="title">Trending now</div>
+          <ul class="trending" id="trendingList">
+            <li>#Remote work</li>
+            <li>#Product Leadership</li>
+            <li>#Interview prep</li>
+            <li>#Portfolio Reviews</li>
+          </ul>
+        </div>
+
+        <div class="card widget">
+          <div class="title">Quick actions</div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <button class="btn" id="refreshBtn">Refresh</button>
+            <button class="btn" id="exportBtn">Export feed (JSON)</button>
+          </div>
+        </div>
+
+      </aside>
+
+    </main>
   </div>
 
+  <!-- Floating compose for small screens -->
+  <button class="fab" id="fabCompose" title="Create a new post">＋</button>
+
+  <script>
+  (function(){
+    // short helpers
+    const feedContainer = document.getElementById('feedContainer');
+    const meAvatar = document.getElementById('meAvatar');
+    const signedOutControls = document.getElementById('signedOutControls');
+    const signedInControls = document.getElementById('signedInControls');
+    const welcomeUser = document.getElementById('welcomeUser');
+    const signoutBtn = document.getElementById('signoutBtn');
+    const composerInput = document.getElementById('composerInput');
+    const openComposer = document.getElementById('openComposer');
+    const fab = document.getElementById('fabCompose');
+
+    // fallback mock feed (used when firebase not available)
+    const MOCK_POSTS = [
+      { id:'p1', authorName:'Asha Verma', time:'2h', avatar:'https://i.pravatar.cc/100?img=1', text:'Just shipped a new design for the dashboard — feedback welcome!', image:'' },
+      { id:'p2', authorName:'Ravi Gupta', time:'1d', avatar:'https://i.pravatar.cc/100?img=6', text:'We are hiring for frontend engineers. DM me.', image:'' },
+      { id:'p3', authorName:'Sneha Rao', time:'3d', avatar:'https://i.pravatar.cc/100?img=12', text:'Tips for interviewing at startups — thread.', image:'' }
+    ];
+
+    // render post helper
+    function renderPost(post){
+      const el = document.createElement('article');
+      el.className = 'card post';
+      el.innerHTML = `
+        <div class="head">
+          <img src="${post.avatar || 'https://i.pravatar.cc/100?img=5'}" alt="${post.authorName}">
+          <div>
+            <div class="meta">${post.authorName}</div>
+            <div class="time small">${post.time}</div>
+          </div>
+        </div>
+        <div class="body">${escapeHtml(post.text || '')}</div>
+        ${post.image ? `<img class="content" src="${post.image}" alt="post image">` : ''}
+      `;
+      return el;
+    }
+
+    // escape
+    function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    // show local feed
+    function loadMockFeed(){
+      feedContainer.innerHTML = '';
+      MOCK_POSTS.forEach(p => feedContainer.appendChild(renderPost(p)));
+    }
+
+    // Feature: if firebase present, read posts from firestore
+    function tryInitFirebase(){
+      if (!(window.firebase && typeof window.firebase.firestore === 'function')) {
+        loadMockFeed();
+        return Promise.resolve(null);
+      }
+      try {
+        const db = firebase.firestore();
+        // read recent posts
+        return db.collection('posts').orderBy('createdAt','desc').limit(20).get()
+          .then(q => {
+            feedContainer.innerHTML = '';
+            if (q.empty) {
+              feedContainer.innerHTML = '<div class="card muted">No posts yet — be the first to post!</div>';
+              return;
+            }
+            q.forEach(doc => {
+              const data = doc.data();
+              // normalize fields
+              const post = {
+                id: doc.id,
+                authorName: data.authorName || 'Unknown',
+                time: data.createdAt && data.createdAt.toDate ? timeAgo(data.createdAt.toDate()) : '',
+                avatar: data.photoURL || 'https://i.pravatar.cc/100?img=5',
+                text: data.text || '',
+                image: data.image || ''
+              };
+              feedContainer.appendChild(renderPost(post));
+            });
+          }).catch(err => {
+            console.error('Firestore read error', err);
+            loadMockFeed();
+          });
+      } catch(e){ loadMockFeed(); return Promise.resolve(null); }
+    }
+
+    // simple time-ago short
+    function timeAgo(date) {
+      const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+      if (diff < 60) return `${diff}s`;
+      if (diff < 3600) return `${Math.floor(diff/60)}m`;
+      if (diff < 86400) return `${Math.floor(diff/3600)}h`;
+      return `${Math.floor(diff/86400)}d`;
+    }
+
+    // auth wiring
+    function waitForAuth(timeoutMs=3000){
+      return new Promise((resolve) => {
+        if (!(window.firebase && typeof window.firebase.auth === 'function')) {
+          resolve(null);
+          return;
+        }
+        const auth = firebase.auth();
+        // check if already ready
+        let resolved = false;
+        const timer = setTimeout(()=> { if(!resolved){ resolved=true; resolve(null); } }, timeoutMs);
+        auth.onAuthStateChanged(user => {
+          if (!resolved) { resolved=true; clearTimeout(timer); resolve(user || null); }
+        });
+      });
+    }
+
+    // populate header based on user
+    function postAuthInit(user){
+      if (!user){
+        signedOutControls.classList.remove('hidden');
+        signedInControls.classList.add('hidden');
+        meAvatar.src = 'https://i.pravatar.cc/100?img=50';
+        return;
+      }
+      signedOutControls.classList.add('hidden');
+      signedInControls.classList.remove('hidden');
+      welcomeUser.textContent = user.displayName ? `Hi, ${user.displayName.split(' ')[0]}` : (user.email || 'Member');
+      meAvatar.src = user.photoURL || ('https://i.pravatar.cc/100?u=' + user.uid);
+    }
+
+    // sign out hook
+    function hookSignout(){
+      signoutBtn.addEventListener('click', async (e)=>{
+        e.preventDefault();
+        if (window.firebase && firebase.auth) {
+          try { await firebase.auth().signOut(); location.href='auth-login.html'; }
+          catch(err){ console.error(err); alert('Sign out failed'); }
+        } else {
+          location.href='auth-login.html';
+        }
+      });
+    }
+
+    // Add new post (compose)
+    async function createPost(text){
+      if (!text || !text.trim()) return;
+      // if firebase available, save to firestore
+      if (window.firebase && firebase.firestore && firebase.auth) {
+        const auth = firebase.auth();
+        const user = auth.currentUser;
+        if (!user) { alert('Please sign in first'); location.href='auth-login.html'; return; }
+        const db = firebase.firestore();
+        const payload = {
+          authorUid: user.uid,
+          authorName: user.displayName || (user.email||'Member'),
+          photoURL: user.photoURL || '',
+          text: text.trim(),
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        try {
+          await db.collection('posts').add(payload);
+          // refresh feed
+          tryInitFirebase();
+        } catch(err){
+          console.error('post create error', err);
+          alert('Failed to create post; check console');
+        }
+      } else {
+        // no firebase - push to mock and re-render
+        MOCK_POSTS.unshift({ id:'m' + Date.now(), authorName:'You', time:'now', avatar:'https://i.pravatar.cc/100?img=15', text });
+        loadMockFeed();
+      }
+    }
+
+    // UI hookups
+    openComposer.addEventListener('click', ()=> {
+      const text = composerInput.value;
+      if (!text.trim()) { composerInput.focus(); return; }
+      createPost(text).then(()=> { composerInput.value=''; });
+    });
+    fab.addEventListener('click', ()=> composerInput.focus());
+
+    document.getElementById('refreshBtn').addEventListener('click', ()=> tryInitFirebase());
+
+    document.getElementById('exportBtn').addEventListener('click', ()=> {
+      // export visible posts as JSON
+      const postsEls = Array.from(document.querySelectorAll('.post'));
+      const exportData = postsEls.map((el,i) => ({
+        idx:i,
+        author: el.querySelector('.meta')?.textContent || '',
+        time: el.querySelector('.time')?.textContent || '',
+        text: el.querySelector('.body')?.textContent || ''
+      }));
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'feed.json'; a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // startup
+    (async function init(){
+      // show a neutral avatar first
+      meAvatar.src = 'https://i.pravatar.cc/100?img=50';
+
+      // wait for auth (short)
+      const user = await waitForAuth();
+      postAuthInit(user);
+      hookSignout();
+
+      // load feed (tries firebase; falls back to mock)
+      tryInitFirebase();
+    })();
+
+  })();
+  </script>
 </body>
 </html>
