@@ -1,230 +1,157 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Pehchaan Setu — Home</title>
-
-<!-- Basic reset + font -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#f6f8fa;
-    --card:#ffffff;
-    --muted:#65707a;
-    --accent:#1f6feb; /* brand accent — change if you want */
-    --chip-bg:#eef3ff;
-    --radius:12px;
-    --max-width:1100px;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{
-    margin:0;
-    background:var(--bg);
-    font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
-    color:#111827;
-    -webkit-font-smoothing:antialiased;
-    -moz-osx-font-smoothing:grayscale;
+  :root {
+    --accent: #0052cc;
+    --text-dark: #1a1a1a;
+    --text-light: #6b7280;
+    --bg: #f8fafc;
+    --radius: 12px;
   }
 
-  /* container */
-  .site{max-width:var(--max-width);margin:28px auto;padding:0 20px;}
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
 
-  /* header */
-  header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:18px}
-  .brand{display:flex;align-items:center;gap:12px}
-  .logo{
-    width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#5bb1ff);
-    display:grid;place-items:center;color:white;font-weight:700;font-size:18px;
-    box-shadow:0 6px 18px rgba(31,111,235,.12), inset 0 -2px 6px rgba(0,0,0,.05);
+  body {
+    background: var(--bg);
+    color: var(--text-dark);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
   }
-  .brand h1{margin:0;font-size:18px;line-height:1;color:#0b4ac9}
-  .brand p{margin:0;font-size:12px;color:var(--muted)}
 
-  nav .nav-actions{display:flex;gap:10px;align-items:center}
-  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;border:1px solid transparent;font-weight:600;cursor:pointer}
-  .btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
-  .btn.primary{background:var(--accent);color:#fff;box-shadow:0 6px 18px rgba(31,111,235,.12)}
-  .btn.secondary{background:#f3f6fb;border:1px solid #e6eefc;color:#0b4ac9}
-
-  /* hero */
-  .hero{display:grid;grid-template-columns:1fr 420px;gap:28px;align-items:center;margin-bottom:20px}
-  @media (max-width:900px){ .hero{grid-template-columns:1fr; padding-bottom:6px} }
-
-  .hero-left h2{font-size:36px;margin:0 0 12px;line-height:1.02}
-  .hero-left p{margin:0 0 18px;color:var(--muted);font-size:16px}
-  .cta-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-  .google-btn{
-    display:inline-flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;border:1px solid #e6e9ef;background:#fff;font-weight:600;
-    cursor:pointer;
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   }
-  .google-logo{width:18px;height:18px;display:inline-block;background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 46 46"><defs></defs><path fill="%23EA4335" d="M23 11v6h13a11 11 0 0 1-13 9.8V11z"/><path fill="%234285F4" d="M23 11a12 12 0 0 0-8.4 3.6L23 20V11z"/><path fill="%23FBBC05" d="M14.6 14.6A12 12 0 0 0 11 23h6v-8.4z"/><path fill="%2342A85F" d="M11 23a12 12 0 0 0 3.6 8.4L23 23H11z"/></svg>') center/contain no-repeat;}
 
-  .hero-right{display:flex;flex-direction:column;gap:12px}
-  .card{background:var(--card);border-radius:14px;padding:18px;box-shadow:0 8px 28px rgba(16,24,40,.06);}
+  .logo-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
 
-  /* chips */
-  .chips{display:flex;gap:10px;overflow:auto;padding-bottom:8px}
-  .chip{white-space:nowrap;background:var(--chip-bg);padding:8px 12px;border-radius:999px;color:var(--accent);font-weight:600;border:1px solid rgba(31,111,235,.06);cursor:pointer}
-  .chips::-webkit-scrollbar{display:none}
+  .logo-section img {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+  }
 
-  /* features grid */
-  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:18px}
-  @media (max-width:1000px){.grid{grid-template-columns:repeat(2,1fr)}}
-  @media (max-width:680px){.grid{grid-template-columns:1fr}}
+  .logo-section h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+  }
 
-  .feature{padding:18px;border-radius:12px;background:linear-gradient(180deg,#fff,#fbfdff);min-height:110px;display:flex;flex-direction:column;justify-content:space-between}
-  .feature h3{margin:0 0 8px;font-size:16px}
-  .feature p{margin:0;color:var(--muted);font-size:14px}
+  .actions {
+    display: flex;
+    gap: 12px;
+  }
 
-  /* footer CTA strip */
-  .strip{margin-top:26px;background:linear-gradient(90deg,#eef7ff 0%, #f7fbff 100%);border-radius:12px;padding:18px;display:flex;justify-content:space-between;align-items:center;gap:18px}
-  .strip h3{margin:0;font-size:18px}
-  .strip p{margin:0;color:var(--muted)}
+  .btn {
+    padding: 10px 18px;
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
 
-  /* small util */
-  .muted{color:var(--muted);font-size:13px}
-  .link{color:var(--accent);text-decoration:none;font-weight:700}
-  footer{margin:36px 0 80px;text-align:center;color:var(--muted);font-size:13px}
+  .btn.primary {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .btn.primary:hover {
+    opacity: 0.9;
+  }
+
+  .btn.secondary {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+  }
+
+  .hero {
+    text-align: center;
+    padding: 70px 24px 100px;
+  }
+
+  .hero img {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 20px;
+  }
+
+  .hero h2 {
+    font-size: 36px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--text-dark);
+  }
+
+  .hero p {
+    font-size: 16px;
+    color: var(--text-light);
+    max-width: 480px;
+    margin: 0 auto 24px;
+  }
+
+  .hero .cta {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .footer {
+    margin-top: auto;
+    padding: 20px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-light);
+  }
+
+  @media (max-width: 600px) {
+    .hero h2 { font-size: 28px; }
+    .hero p { font-size: 15px; }
+  }
 </style>
 </head>
 <body>
 
-  <div class="site">
-    <header>
-      <div class="brand">
-        <div class="logo">PS</div>
-        <div>
-          <h1>Pehchaan Setu</h1>
-          <p class="muted">Professional community for creators & builders</p>
-        </div>
-      </div>
+  <header>
+    <div class="logo-section">
+      <img src="Logo.png" alt="Pehchaan Setu Logo">
+      <h1>Pehchaan Setu</h1>
+    </div>
+    <div class="actions">
+      <button class="btn secondary" onclick="location.href='auth-login.html'">Sign In</button>
+      <button class="btn primary" onclick="location.href='auth-signup.html'">Join Now</button>
+    </div>
+  </header>
 
-      <nav>
-        <div class="nav-actions">
-          <a class="btn ghost" href="auth-login.html">Sign in</a>
-          <a class="btn primary" href="auth-signup.html">Join now</a>
-        </div>
-      </nav>
-    </header>
+  <section class="hero">
+    <img src="Logo.png" alt="Pehchaan Setu Logo">
+    <h2>Empowering Professionals. Building Connections.</h2>
+    <p>Join India’s growing professional community to showcase your work, network with peers, and grow your career.</p>
+    <div class="cta">
+      <button class="btn primary" onclick="location.href='auth-signup.html'">Get Started</button>
+      <button class="btn secondary" onclick="location.href='auth-login.html'">Sign In</button>
+    </div>
+  </section>
 
-    <!-- HERO -->
-    <section class="hero">
-      <div class="hero-left">
-        <h2>Find jobs, grow your network, and build your career.</h2>
-        <p>Join Pehchaan Setu to discover opportunities, learn from others and share your professional story.</p>
-
-        <div class="cta-row">
-          <button class="google-btn" onclick="location.href='auth-signup.html'">
-            <span class="google-logo" aria-hidden="true"></span>
-            <span>Continue with Google</span>
-          </button>
-
-          <button class="btn secondary" onclick="location.href='auth-signup.html'">Sign up with email</button>
-
-          <span class="muted" style="margin-left:8px">Already a member? <a class="link" href="auth-login.html">Sign in</a></span>
-        </div>
-
-        <!-- chips / topics -->
-        <div style="margin-top:18px">
-          <div class="chips" id="topics">
-            <div class="chip">Product Design</div>
-            <div class="chip">Engineering</div>
-            <div class="chip">Marketing</div>
-            <div class="chip">Finance</div>
-            <div class="chip">Leadership</div>
-            <div class="chip">Data Science</div>
-            <div class="chip">Operations</div>
-            <div class="chip">Entrepreneurship</div>
-          </div>
-        </div>
-      </div>
-
-      <aside class="hero-right">
-        <div class="card">
-          <h3 style="margin:0 0 8px">Discover what professionals share</h3>
-          <p class="muted" style="margin-bottom:12px">From short posts to long form articles — see what your peers are saying and get noticed.</p>
-          <div style="display:flex;gap:8px">
-            <button class="btn primary" onclick="document.getElementById('topics').firstElementChild.click()">Explore Feed</button>
-            <a class="btn ghost" href="#learn">Learn more</a>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:12px">
-          <h4 style="margin:0 0 6px">Trending now</h4>
-          <div class="muted">
-            <div style="padding:8px 0;border-top:1px dashed #eef5ff">Remote work  ·  Hiring tips</div>
-            <div style="padding:8px 0;border-top:1px dashed #eef5ff">Design systems  ·  Product leadership</div>
-            <div style="padding:8px 0;border-top:1px dashed #eef5ff">Interview prep  ·  Portfolio reviews</div>
-          </div>
-        </div>
-      </aside>
-    </section>
-
-    <!-- FEATURES -->
-    <section>
-      <div class="grid">
-        <div class="feature card">
-          <div>
-            <h3>Find a job</h3>
-            <p>Search roles from hiring teams across startups and enterprises. Get alerts tailored to your profile.</p>
-          </div>
-          <div style="text-align:right"><a class="link" href="#">Browse jobs →</a></div>
-        </div>
-
-        <div class="feature card">
-          <div>
-            <h3>Learn skills</h3>
-            <p>Short courses and micro-lessons to grow your skills. Pick a topic and get started today.</p>
-          </div>
-          <div style="text-align:right"><a class="link" href="#learn">Start learning →</a></div>
-        </div>
-
-        <div class="feature card">
-          <div>
-            <h3>Build your profile</h3>
-            <p>Create a profile that stands out. Add experience, projects, and connect with colleagues.</p>
-          </div>
-          <div style="text-align:right"><a class="link" href="profile.html">Edit profile →</a></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- CTA STRIP -->
-    <section class="strip" style="margin-top:24px">
-      <div>
-        <h3>Ready to get started?</h3>
-        <p class="muted">Create your professional profile and connect with people who can help you grow.</p>
-      </div>
-      <div style="display:flex;gap:12px">
-        <a class="btn primary" href="auth-signup.html">Get started</a>
-        <a class="btn ghost" href="auth-login.html">Sign in</a>
-      </div>
-    </section>
-
-    <footer style="margin-top:34px">
-      © <strong>Pehchaan Setu</strong> — built with ♥ · <span class="muted">Not affiliated with LinkedIn</span>
-    </footer>
+  <div class="footer">
+    © 2025 Pehchaan Setu · Built for professionals, by professionals.
   </div>
 
-  <script>
-    // small JS just for demo interactions (replace/extend as needed)
-    document.querySelectorAll('.chip').forEach(chip=>{
-      chip.addEventListener('click', ()=>{
-        // simulate opening topic feed — you can hook this to actual feed page
-        const t = chip.textContent.trim();
-        alert('Open feed for: ' + t + '\n\n(You can route to a feed page or filter your content by this topic.)');
-      });
-    });
-
-    // keyboard accessibility: Enter on chips
-    document.querySelectorAll('.chip').forEach(chip=>{
-      chip.tabIndex = 0;
-      chip.addEventListener('keydown', (e)=>{
-        if(e.key === 'Enter') chip.click();
-      });
-    });
-  </script>
 </body>
 </html>
